@@ -265,12 +265,55 @@ for (const m of Object.values(MAPS)) {
 }
 function tileAt(m, x, y) { if (x < 0 || y < 0 || x >= m.w || y >= m.h) return 'V'; return m.rows[y][x]; }
 function isSolid(m, x, y) { return SOLID.has(tileAt(m, x, y)); }
+const FLOORS = new Set('.,_=igGpCuj'.split(''));
+const WALLFACE = new Set('#WkSRYUFmBEcHM'.split(''));
 function mapCanvas(m) {
   if (m.canvas) return m.canvas;
   const c = mk(m.w * TS, m.h * TS), g = c.getContext('2d');
+  const R = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
   for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
-    const t = TILES[m.rows[y][x]] || TILES['V'];
-    g.drawImage(t, x * TS, y * TS);
+    const ch = m.rows[y][x], t = TILES[ch] || TILES['V'];
+    const X = x * TS, Y = y * TS;
+    // 나무·가구 아래에는 바닥을 먼저 깐다
+    if (ch === 'f') g.drawImage(TILES['g'], X, Y);
+    g.drawImage(t, X, Y);
+    // 칸마다 다른 잔무늬
+    const r = seeded(x * 7919 + y * 104729 + ch.charCodeAt(0) * 13);
+    if (ch === '.' || ch === 'C' || ch === 'u') {
+      if (r() < 0.35) { const cx = X + 2 + (r() * 11 | 0), cy = Y + 2 + (r() * 11 | 0); R(cx, cy, 3, 1, 'rgba(0,0,0,.18)'); R(cx + 2, cy + 1, 2, 1, 'rgba(0,0,0,.18)'); }
+      if (r() < 0.25) R(X + (r() * 14 | 0), Y + (r() * 14 | 0), 2, 2, 'rgba(255,255,255,.07)');
+      if (r() < 0.1) R(X + (r() * 12 | 0), Y + (r() * 12 | 0), 3, 2, 'rgba(70,110,60,.25)');
+    } else if (ch === 'g' || ch === 'G') {
+      for (let i = 0; i < 3; i++) { if (r() < 0.6) { const gx = X + (r() * 13 | 0), gy = Y + 3 + (r() * 11 | 0); R(gx, gy, 1, 2, '#5aa04a'); R(gx + 2, gy, 1, 2, '#5aa04a'); R(gx + 1, gy + 1, 1, 2, '#2e5e2a'); } }
+      if (r() < 0.06) { const fx = X + (r() * 12 | 0), fy = Y + (r() * 12 | 0); R(fx, fy, 2, 2, ['#f2e86a', '#f8f8f8', '#e88ab0', '#9ab8ff'][r() * 4 | 0]); }
+      g.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,200'},${(r() * 0.06).toFixed(3)})`; g.fillRect(X, Y, TS, TS);
+    } else if (ch === ',') {
+      if (r() < 0.3) { const kx = X + (r() * 12 | 0), ky = Y + 1 + (r() * 3 | 0) * 4; R(kx, ky, 2, 1, '#4e321c'); }
+      g.fillStyle = `rgba(0,0,0,${(r() * 0.08).toFixed(3)})`; g.fillRect(X, Y, TS, TS);
+    } else if (ch === 'f') {
+      g.fillStyle = `rgba(0,${r() < 0.5 ? 0 : 30},0,${(0.05 + r() * 0.12).toFixed(3)})`; g.fillRect(X, Y, TS, TS);
+      R(X + 4 + (r() * 6 | 0), Y + 3 + (r() * 4 | 0), 2, 1, 'rgba(160,220,140,.35)');
+    }
+    // 벽 아랫단 / 윗단
+    if (WALLFACE.has(ch)) {
+      if (!isSolid(m, x, y + 1)) { R(X, Y + 14, TS, 2, 'rgba(0,0,0,.35)'); R(X, Y + 13, TS, 1, 'rgba(255,255,255,.06)'); }
+      if (tileAt(m, x, y - 1) === 'T') R(X, Y, TS, 1, 'rgba(255,255,255,.12)');
+    }
+    if (ch === 'T' && !isSolid(m, x, y + 1)) R(X, Y + 14, TS, 2, '#15151b');
+  }
+  // 그림자 (벽·가구 아래 바닥)
+  for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
+    if (isSolid(m, x, y)) continue;
+    const X = x * TS, Y = y * TS;
+    if (isSolid(m, x, y - 1)) { for (let i = 0; i < 6; i++) { g.fillStyle = `rgba(0,0,0,${0.32 - i * 0.05})`; g.fillRect(X, Y + i, TS, 1); } }
+    if (isSolid(m, x - 1, y)) { g.fillStyle = 'rgba(0,0,0,.16)'; g.fillRect(X, Y, 2, TS); }
+    if (isSolid(m, x + 1, y)) { g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(X + TS - 2, Y, 2, TS); }
+  }
+  m.lights = [];
+  for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
+    const ch = m.rows[y][x];
+    if (ch === 'k' || ch === 'F' || ch === 'L') m.lights.push({ x: x * TS + 8, y: y * TS + (ch === 'F' ? 12 : 5), r: ch === 'F' ? 56 : 40, ph: x * 1.7 + y });
+    if (ch === 'v') m.lights.push({ x: x * TS + 8, y: y * TS + 6, r: 22, ph: x + y, col: '90,230,120' });
   }
   return (m.canvas = c);
 }

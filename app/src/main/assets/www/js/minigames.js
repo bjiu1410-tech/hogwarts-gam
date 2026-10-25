@@ -47,7 +47,7 @@ function drawArrow(x, y, dir, col, s = 1) {
 }
 function drawChar(id, x, y, dir = 0, frame = 0, scale = 1) {
   const sh = getSprite(id);
-  ctx.drawImage(sh, frame * 16, dir * 20, 16, 20, Math.round(x - 8 * scale), Math.round(y - 20 * scale), 16 * scale, 20 * scale);
+  ctx.drawImage(sh, frame * SPR_W, dir * SPR_H, SPR_W, SPR_H, Math.round(x - 8 * scale), Math.round(y - SPR_H * scale), SPR_W * scale, SPR_H * scale);
 }
 function skyBg(t, top = '#3a6ab0', bot = '#9ac8f0', clouds = true) {
   const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, top); gr.addColorStop(1, bot);
@@ -73,7 +73,7 @@ const MINIS = {
     init(m, v) {
       m.px = 70; m.py = 110; m.stun = 0; m.hp = 3; m.obs = []; m.spawn = 0;
       if (v === 'remembrall') { m.title = '기억구슬을 잡아라!'; m.help = '방향키로 날아서 떨어지는 구슬에 닿기'; m.ball = { x: 300, y: 24, vx: -18, vy: 6 }; m.winText = '잡았다!'; }
-      if (v === 'snitch') { m.title = '골든 스니치!'; m.help = '해리보다 먼저 스니치를 잡자. 블러저 주의!'; m.sn = { x: 300, y: 60, tx: 260, ty: 80, tt: 0 }; m.rv = { x: 60, y: 160, stun: 0 }; m.winText = '스니치를 잡았다!'; m.loseText = '해리가 먼저 잡았다…'; }
+      if (v === 'snitch') { m.title = '골든 스니치!'; m.help = '말포이보다 먼저 스니치를 잡자. 블러저 주의!'; m.sn = { x: 300, y: 60, tx: 260, ty: 80, tt: 0 }; m.rv = { x: 60, y: 160, stun: 0 }; m.winText = '스니치를 잡았다!'; m.loseText = '말포이가 먼저 잡았다…'; }
       if (v === 'fiendfyre') { m.title = '악마의 화염에서 탈출!'; m.help = '불길을 피해 22초간 버텨라!'; m.timeLimit = 22; m.winText = '탈출 성공!'; m.loseText = '불길에 휩싸였다…!'; }
     },
     update(m, dt) {
@@ -152,23 +152,23 @@ const MINIS = {
       }
       if (m.variant === 'snitch') {
         for (const o of m.obs) { ctx.fillStyle = '#1c1c22'; ctx.fillRect(o.x - 6, o.y - 6, 12, 12); ctx.fillStyle = '#4a4a56'; ctx.fillRect(o.x - 4, o.y - 4, 4, 4); }
-        const r = m.rv; broomRider('harry', r.x, r.y, t + 1);
+        const r = m.rv; broomRider('draco', r.x, r.y, t + 1);
         const s = m.sn, wing = Math.floor(t * 30) % 2;
         ctx.fillStyle = '#e8ecf0'; ctx.fillRect(s.x - 8, s.y - 3 - wing * 2, 5, 3); ctx.fillRect(s.x + 3, s.y - 3 - wing * 2, 5, 3);
         ctx.fillStyle = '#ffd23a'; ctx.fillRect(s.x - 3, s.y - 3, 6, 6); ctx.fillStyle = '#fff6b0'; ctx.fillRect(s.x - 2, s.y - 2, 2, 2);
       }
-      if (m.stun <= 0 || Math.floor(t * 20) % 2) broomRider('draco', m.px, m.py, t);
+      if (m.stun <= 0 || Math.floor(t * 20) % 2) broomRider('harry', m.px, m.py, t);
     },
   },
   // --- 마법 결투 ---
   duel: {
     init(m, v) {
-      const E = { harry: ['harry', 3, 1.3], troll: ['troll', 3, 1.0], deatheater: ['deatheater', 4, 1.5], bellatrix: ['bellatrix', 4, 1.7], boggart: ['hooded', 3, 1.2], hooded: ['hooded', 3, 1.25], dementor: ['hooded', 3, 1.3] }[v] || ['harry', 3, 1.3];
+      const E = { draco: ['draco', 3, 1.35], harry: ['harry', 3, 1.3], troll: ['troll', 3, 1.0], deatheater: ['deatheater', 4, 1.5], bellatrix: ['bellatrix', 4, 1.7], boggart: ['hooded', 3, 1.2], hooded: ['hooded', 3, 1.25], dementor: ['hooded', 3, 1.3] }[v] || ['harry', 3, 1.3];
       m.enemy = E[0]; m.ehp = E[1]; m.emax = E[1]; m.speed = E[2]; m.hp = 3; m.cur = 0; m.dir = 1;
       m.zone = 0.5; m.zw = 0.22; m.flash = 0; m.msg = ''; m.mt = 0; m.cool = 0;
       m.title = { troll: '트롤을 막아라!', hooded: '두건 쓴 자를 막아라!', boggart: '보가트를 물리쳐라!', dementor: '디멘터를 쫓아내라!' }[v] || '마법 결투!';
       m.help = '막대가 초록 구간에 왔을 때 A(또는 화면 터치)!';
-      m.spells = { troll: ['윙가르디움 레비오사!'], boggart: ['리디큘러스!'], dementor: ['익스펙토 페트로눔!'] }[v] || ['엑스펠리아르무스!', '스투페파이!', '프로테고!', '리크투셈프라!'];
+      m.spells = { troll: ['스투페파이!', '익스펠리아르무스!'], boggart: ['리디큘러스!'], dementor: ['익스펙토 페트로눔!'] }[v] || ['엑스펠리아르무스!', '스투페파이!', '프로테고!', '리크투셈프라!'];
       m.newZone = () => { m.zw = Math.max(0.1, 0.22 - (m.emax - m.ehp) * 0.03); m.zone = rnd(0.15 + m.zw / 2, 0.85 - m.zw / 2); };
       m.newZone();
     },
@@ -191,7 +191,7 @@ const MINIS = {
       ctx.fillStyle = dark ? '#1a1e2a' : '#4a4a56'; ctx.fillRect(0, 120, W, 96);
       for (let x = 0; x < W; x += 32) { ctx.fillStyle = dark ? '#151924' : '#3c3c46'; ctx.fillRect(x, 120, 1, 96); }
       const shakeP = m.flash > 0 && m.who === 'e' ? irnd(-2, 2) : 0, shakeE = m.flash > 0 && m.who === 'p' ? irnd(-2, 2) : 0;
-      drawChar('draco', 90 + shakeP, 150, 2, 0, 3);
+      drawChar('harry', 90 + shakeP, 150, 2, 0, 3);
       const big = m.enemy === 'troll' ? 4 : 3;
       if (m.variant === 'dementor' || m.variant === 'boggart') ctx.globalAlpha = 0.85;
       drawChar(m.enemy, 294 + shakeE, 150, 1, 0, big);
@@ -202,7 +202,7 @@ const MINIS = {
         for (let i = 0; i < 12; i++) { const k = i / 12; ctx.fillRect(lerp(x0, x1, k), 110 + Math.sin(k * 9 + m.t * 30) * 4, 6, 3); }
       }
       // HP
-      txt('드레이코', 20, 14, '#f1ecd2');
+      txt('해리', 20, 14, '#f1ecd2');
       for (let i = 0; i < 3; i++) { ctx.fillStyle = i < m.hp ? '#7fd1a0' : '#333'; ctx.fillRect(20 + i * 12, 30, 9, 7); }
       txt(CHARS[m.enemy].name, W - 20, 14, '#f1ecd2', 'right');
       for (let i = 0; i < m.emax; i++) { ctx.fillStyle = i < m.ehp ? '#e86a6a' : '#333'; ctx.fillRect(W - 29 - i * 12, 30, 9, 7); }
@@ -291,7 +291,7 @@ const MINIS = {
       ctx.fillStyle = 'rgba(20,30,60,.55)'; ctx.fillRect(0, 0, W, H);
       for (let i = 0; i < 30; i++) { ctx.fillStyle = i % 3 ? '#e8f0ff' : '#ffe28a'; ctx.fillRect((i * 61 + Math.sin(m.t + i) * 8) % W, (i * 37 + m.t * 12) % 120, 2, 2); }
       const f = Math.floor(m.t * 2.2) % 3;
-      drawChar('draco', W / 2 - 12, 150, f === 1 ? 2 : 0, f, 3); drawChar('harry', W / 2 + 22, 150, 1, (f + 1) % 3, 3);
+      drawChar('harry', W / 2 - 12, 150, f === 1 ? 2 : 0, f, 3); drawChar('draco', W / 2 + 22, 150, 1, (f + 1) % 3, 3);
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 168, W, 40);
       ctx.strokeStyle = '#ffe28a'; ctx.lineWidth = 2; ctx.strokeRect(m.hx - 14, 174, 28, 28);
       for (const n of m.notes) {

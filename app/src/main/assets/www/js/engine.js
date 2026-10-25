@@ -1,7 +1,9 @@
 'use strict';
 // ===== 스크립트 파서 =====
 // 문법 요약 (story.js 상단 주석 참고)
-const STAT_NAMES = { harry: '해리', hermione: '헤르미온느', ron: '론', courage: '용기', dark: '어둠' };
+const STAT_NAMES = { draco: '드레이코', hermione: '헤르미온느', ron: '론', courage: '용기' };
+const HEART_STATS = ['draco', 'hermione', 'ron'];
+let PLAYER = 'harry';
 const Script = {
   lines: [], labels: {}, chapters: [],
   parse(src) {
@@ -54,6 +56,7 @@ const Script = {
           case 'move': push({ t: 'move', id: rest[0], path: rest.slice(1).join('') }); break;
           case 'face': push({ t: 'face', id: rest[0], dir: rest[1] }); break;
           case 'hide': push({ t: 'hide', id: rest[0] }); break;
+          case 'player': push({ t: 'player', id: rest[0] }); break;
           default: errs.push(`알 수 없는 명령 @${cmd} (${ln})`);
         }
         return;
@@ -97,7 +100,7 @@ const G = {
 };
 
 function newGame() {
-  G.flags = { harry: 0, hermione: 0, ron: 0, courage: 0, dark: 0 };
+  G.flags = { draco: 0, hermione: 0, ron: 0, courage: 0 };
   startAt(0);
 }
 function startAt(pc, flags, extra) {
@@ -144,7 +147,7 @@ function applyFx(list) {
     if (f.set !== undefined) { G.flags[f.k] = f.set; continue; }
     G.flags[f.k] = (G.flags[f.k] || 0) + f.v;
     if (STAT_NAMES[f.k]) {
-      const heart = ['harry', 'hermione', 'ron'].includes(f.k);
+      const heart = HEART_STATS.includes(f.k);
       G.toasts.push({ text: `${STAT_NAMES[f.k]} ${heart ? '호감도' : ''} ${f.v > 0 ? '▲' : '▼'}${Math.abs(f.v)}`.replace('  ', ' '), col: f.v > 0 ? (heart ? '#ff9ab8' : '#ffe28a') : '#9ab0d0', t: 2.2 });
       Snd.sfx(f.v > 0 && heart ? 'heart' : 'sel');
     }
@@ -181,6 +184,7 @@ function step() {
       case 'npc': if (G.ex) { G.ex.npcs = G.ex.npcs.filter(n => n.id !== L.id); G.ex.npcs.push({ id: L.id, x: L.x, y: L.y, dir: DIRN[L.dir] ?? 0, to: L.to, px: L.x * TS, py: L.y * TS, path: '', moving: 0, frame: 0 }); } break;
       case 'obj': if (G.ex) G.ex.objs.push({ x: L.x, y: L.y, to: L.to }); break;
       case 'exit': if (G.ex) G.ex.exits.push({ x: L.x, y: L.y, to: L.to }); break;
+      case 'player': G.flags._player = L.id; if (G.ex) G.ex.player.id = L.id; break;
       case 'hide': if (G.ex) G.ex.npcs = G.ex.npcs.filter(n => n.id !== L.id); break;
       case 'face': { const n = findActor(L.id); if (n) n.dir = DIRN[L.dir] ?? 0; break; }
       case 'move': { const n = findActor(L.id); if (n) { n.path = L.path; G.mode = 'move'; G.moveActor = n; return; } break; }
@@ -207,7 +211,7 @@ function step() {
   }
   console.error('step guard 초과 (무한 루프?) pc=' + G.pc);
 }
-function findActor(id) { if (!G.ex) return null; if (id === 'draco' || id === 'player') return G.ex.player; return G.ex.npcs.find(n => n.id === id); }
+function findActor(id) { if (!G.ex) return null; if (id === 'player' || id === G.ex.player.id) return G.ex.player; return G.ex.npcs.find(n => n.id === id); }
 
 function startSay(L) {
   G.lastSay = null;
@@ -225,7 +229,7 @@ function setupExplore(L, pc) {
   G.bg = L.map; G.tint = m.tint || null; G.cg = null;
   G.ex = {
     map: m, pcStart: pc, npcs: [], objs: [], exits: [], pushBack: null, done: new Set(),
-    player: { id: 'draco', x: L.x, y: L.y, px: L.x * TS, py: L.y * TS, dir: DIRN[L.dir] ?? 0, moving: 0, frame: 0, ft: 0, path: '' },
+    player: { id: G.flags._player || PLAYER, x: L.x, y: L.y, px: L.x * TS, py: L.y * TS, dir: DIRN[L.dir] ?? 0, moving: 0, frame: 0, ft: 0, path: '' },
   };
   G.goal = '';
   updateCam(true);
@@ -253,6 +257,7 @@ function tryMove(a, dir) {
   return true;
 }
 function updateExplore(dt) {
+  if (!G.ex) { G.mode = 'idle'; return; }
   const e = G.ex, p = e.player;
   for (const n of e.npcs) { if (n.moving) stepActor(n, dt); else n.frame = 0; }
   if (p.moving) {
@@ -303,7 +308,7 @@ function drawWorld() {
     const ents = [...G.ex.npcs, G.ex.player].sort((a, b) => a.py - b.py);
     for (const a of ents) {
       const sh = getSprite(a.id);
-      ctx.drawImage(sh, (a.frame || 0) * 16, a.dir * 20, 16, 20, Math.round(a.px + ox), Math.round(a.py + oy - 6), 16, 20);
+      ctx.drawImage(sh, (a.frame || 0) * SPR_W, a.dir * SPR_H, SPR_W, SPR_H, Math.round(a.px + ox), Math.round(a.py + oy - 9), SPR_W, SPR_H);
     }
     if (G.mode === 'explore') { // 상호작용 표시
       const p = G.ex.player, [dx, dy] = DV[p.dir];
@@ -312,6 +317,28 @@ function drawWorld() {
     }
   }
   if (G.tint) { ctx.fillStyle = G.tint; ctx.fillRect(0, 0, W, H); }
+  // 횃불·벽난로 불빛
+  if (m.lights && m.lights.length) {
+    const t = performance.now() / 1000;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const L of m.lights) {
+      const x = L.x + ox, y = L.y + oy; if (x < -60 || y < -60 || x > W + 60 || y > H + 60) continue;
+      const r = L.r * (1 + Math.sin(t * 7 + L.ph) * 0.05 + Math.sin(t * 13 + L.ph) * 0.03);
+      const gr = ctx.createRadialGradient(x, y, 2, x, y, r);
+      const col = L.col || '255,160,70', a = G.tint ? 0.32 : 0.16;
+      gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = gr; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+  // 떠다니는 먼지 / 반딧불
+  if (G.tint) {
+    const t = performance.now() / 1000;
+    for (let i = 0; i < 14; i++) {
+      const px = (i * 61.7 + Math.sin(t * 0.7 + i) * 18 + t * 4) % W, py = (i * 37.3 + Math.cos(t * 0.5 + i * 2) * 12 + 216) % H;
+      ctx.fillStyle = `rgba(255,240,170,${0.25 + 0.25 * Math.sin(t * 3 + i)})`; ctx.fillRect(px | 0, py | 0, 1, 1);
+    }
+  }
 }
 function drawCG() {
   const cg = G.cg; if (!cg) return;
@@ -331,13 +358,13 @@ function drawCG() {
 }
 function drawSay() {
   const s = G.say; if (!s) return;
-  const L = s.L, isDraco = L.id === 'draco';
+  const L = s.L, isDraco = L.id === PLAYER;
   const por = L.id ? getPortrait(L.id, L.emo) : null;
   if (por && !G.cg) {
-    const ph = 112, pw = Math.round(por.width * ph / por.height);
+    const ph = 128, pw = Math.round(por.width * ph / por.height);
     const x = isDraco ? 6 : W - pw - 6;
     ctx.imageSmoothingEnabled = por.height > ph * 1.5;
-    ctx.drawImage(por, x, 148 - ph + 4, pw, ph);
+    ctx.drawImage(por, x, 150 - ph, pw, ph);
     ctx.imageSmoothingEnabled = false;
   }
   panel(4, 148, W - 8, 64);
@@ -347,7 +374,7 @@ function drawSay() {
     const nm = L.thought ? L.name + ' (속마음)' : L.name, nw = tw(nm) + 14;
     const nx = isDraco || !por ? 10 : W - 10 - nw;
     panel(nx, 134, nw, 17, 1);
-    txt(nm, nx + 7, 137, isDraco ? '#e8f0d0' : '#ffe8b0');
+    txt(nm, nx + 7, 137, isDraco ? '#ffd8c8' : L.id === 'draco' ? '#e8f0d0' : '#ffe8b0');
   }
   const col = L.thought ? '#a8c8e8' : (L.name ? '#f4f4f8' : '#e0d8c0');
   const page = s.pages[s.page]; let left = Math.floor(s.shown);
@@ -418,13 +445,13 @@ function drawPause() {
 function drawStats() {
   panel(40, 20, W - 80, 176);
   bigTxt('관계 / 상태', W / 2, 26, 1, '#9ad0b0');
-  const rows = [['harry', '해리 포터', '#ff9ab8'], ['hermione', '헤르미온느 그레인저', '#ffb88a'], ['ron', '론 위즐리', '#ffd08a'], ['courage', '용기', '#ffe28a'], ['dark', '어둠', '#a08ad0']];
+  const rows = [['draco', '드레이코 말포이', '#c8e8ff'], ['hermione', '헤르미온느 그레인저', '#ffb88a'], ['ron', '론 위즐리', '#ffd08a'], ['courage', '용기', '#ffe28a']];
   rows.forEach(([k, nm, col], i) => {
-    const v = G.flags[k] || 0, y = 50 + i * 24;
-    const por = getPortrait(k === 'courage' || k === 'dark' ? 'draco' : k, k === 'dark' ? 'smirk' : 'normal');
+    const v = G.flags[k] || 0, y = 54 + i * 28;
+    const por = getPortrait(k === 'courage' ? 'harry' : k, k === 'draco' ? 'smirk' : 'normal');
     if (por) ctx.drawImage(por, 52, y - 4, 20, 20);
     txt(nm, 80, y, '#e8e8f0');
-    const max = k === 'harry' ? 50 : 15;
+    const max = k === 'draco' ? 50 : 15;
     ctx.fillStyle = '#222'; ctx.fillRect(200, y + 3, 120, 8);
     ctx.fillStyle = col; ctx.fillRect(200, y + 3, clamp(v / max, 0, 1) * 120, 8);
     txt(String(v), 328, y, col);
@@ -456,17 +483,16 @@ function drawSettings(p) {
 
 // ===== 엔딩 =====
 const ENDINGS = {
-  true: { name: '은빛 운명', sub: '해리 엔딩', col: '#ffe28a' },
-  friend: { name: '네 사람의 약속', sub: '우정 엔딩', col: '#9ad0b0' },
-  normal: { name: '원작의 그림자', sub: '노멀 엔딩', col: '#c9d1e0' },
-  bad: { name: '어둠의 표식', sub: '배드 엔딩', col: '#b08ad0' },
+  true: { name: '은빛 운명', sub: '드레이코 엔딩', col: '#ffe28a' },
+  rival: { name: '영원한 라이벌', sub: '라이벌 엔딩', col: '#9ad0b0' },
+  normal: { name: '승강장 건너편', sub: '노멀 엔딩', col: '#c9d1e0' },
 };
 function showEnding(id) {
   const sys = Store.get('tsm_sys', { endings: [], chapters: {} });
   if (!sys.endings.includes(id)) sys.endings.push(id);
   Store.set('tsm_sys', sys);
   G.ending = { id, t: 0 }; G.mode = 'ending'; G.cg = null;
-  Snd.music(id === 'bad' ? 'sad' : 'title');
+  Snd.music(id === 'normal' ? 'sad' : 'title');
   if (TEST) { window.__TEST_ENDING = id; }
 }
 function drawEnding() {
@@ -478,7 +504,7 @@ function drawEnding() {
   bigTxt(d.name, W / 2, 62, 3, d.col);
   txt('— ' + d.sub + ' —', W / 2, 112, '#e8e8f0', 'center');
   const sys = Store.get('tsm_sys', { endings: [] });
-  txt(`발견한 엔딩 ${sys.endings.length} / 4`, W / 2, 140, '#c9d1e0', 'center');
+  txt(`발견한 엔딩 ${sys.endings.filter(e => ENDINGS[e]).length} / ${Object.keys(ENDINGS).length}`, W / 2, 140, '#c9d1e0', 'center');
   if (e.t > 2) txt('A 버튼을 눌러 타이틀로', W / 2, 180, '#ffe28a', 'center');
   ctx.globalAlpha = 1;
 }
@@ -539,7 +565,7 @@ function drawTitle() {
   ctx.fillStyle = '#0c1424'; ctx.fillRect(0, 200, W, 16);
   // 드레이코 실루엣 초상
   const por = getPortrait('draco', 'smirk');
-  if (por) { ctx.globalAlpha = 0.95; ctx.drawImage(por, 8, H - 120, 120, 120); ctx.globalAlpha = 1; }
+  if (por) ctx.drawImage(por, 0, H - 128, 128, 128);
   if (T.sub === 'set') return drawSettings(T);
   if (T.sub === 'chap') return drawChapterSelect(T);
   bigTxt('TS 말포이', W / 2 + 24, 22, 4, '#f1ecd2', 'center', '#2f8a4e');
