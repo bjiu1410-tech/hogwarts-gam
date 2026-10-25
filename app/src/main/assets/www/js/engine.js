@@ -351,7 +351,7 @@ function drawCG() {
     const [cid, emo] = id.split(':'); const p = getPortrait(cid, emo || 'normal'); if (!p) return;
     const w = Math.round(p.width * size / p.height);
     const x = W / 2 + (i - (n - 1) / 2) * gap - w / 2;
-    ctx.imageSmoothingEnabled = false; ctx.drawImage(p, Math.round(x), 152 - size, w, size);
+    ctx.imageSmoothingEnabled = isIllust(p); ctx.drawImage(p, Math.round(x), 152 - size, w, size); ctx.imageSmoothingEnabled = false;
   });
   for (let i = 0; i < 18; i++) { ctx.fillStyle = i % 2 ? '#e8f0ff' : '#ffe28a'; const t = performance.now() / 1000; ctx.fillRect((i * 47 + t * 9) % W, (i * 29 + Math.sin(t + i) * 10 + 216) % 140, 2, 2); }
   if (cg.cap) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 4, W, 18); txt('✦ ' + cg.cap, W / 2, 7, '#e8e0c0', 'center'); }
@@ -361,15 +361,21 @@ function drawSay() {
   const L = s.L, isDraco = L.id === PLAYER;
   const por = L.id ? getPortrait(L.id, L.emo) : null;
   if (por && !G.cg) {
-    const ph = 128, pw = Math.round(por.width * ph / por.height);
-    const x = isDraco ? 6 : W - pw - 6;
-    ctx.imageSmoothingEnabled = por.height > ph * 1.5;
-    ctx.drawImage(por, x, 150 - ph, pw, ph);
-    ctx.imageSmoothingEnabled = false;
+    if (isIllust(por)) {
+      // 일러스트: 크게, 아랫부분은 대사창 뒤로 (비주얼노벨식)
+      const ph = 176, pw = Math.round(por.width * ph / por.height);
+      const x = isDraco ? -8 : W - pw + 8;
+      ctx.imageSmoothingEnabled = por.height !== ph;
+      ctx.drawImage(por, x, 176 - ph, pw, ph);
+      ctx.imageSmoothingEnabled = false;
+    } else {
+      const ph = 128, pw = Math.round(por.width * ph / por.height);
+      ctx.drawImage(por, isDraco ? 6 : W - pw - 6, 150 - ph, pw, ph);
+    }
   }
-  panel(4, 148, W - 8, 64);
+  panel(4, 148, W - 8, 64, 0.97);
   let tx = 14;
-  if (por && G.cg) { ctx.drawImage(por, 10, 154, 52, 52); tx = 70; }
+  if (por && G.cg) { ctx.imageSmoothingEnabled = isIllust(por); ctx.drawImage(por, 10, 154, 52, 52); ctx.imageSmoothingEnabled = false; tx = 70; }
   if (L.name) {
     const nm = L.thought ? L.name + ' (속마음)' : L.name, nw = tw(nm) + 14;
     const nx = isDraco || !por ? 10 : W - 10 - nw;
@@ -526,7 +532,7 @@ function updateTitle(dt) {
   const items = titleItems();
   if (Input.pressed.up) { T.sel = (T.sel + items.length - 1) % items.length; Snd.sfx('sel'); }
   if (Input.pressed.down) { T.sel = (T.sel + 1) % items.length; Snd.sfx('sel'); }
-  if (Input.tap) items.forEach((_, i) => { if (inRect(Input.tap, W / 2 - 70, 128 + i * 19, 140, 18)) { T.sel = i; Input.pressed.a = true; } });
+  if (Input.tap) items.forEach((_, i) => { if (inRect(Input.tap, 224, 116 + i * 19, 140, 18)) { T.sel = i; Input.pressed.a = true; } });
   if (Input.pressed.a && T.t > 0.3) {
     const act = items[T.sel][1];
     if (!act) { Snd.sfx('no'); return; }
@@ -565,14 +571,14 @@ function drawTitle() {
   ctx.fillStyle = '#0c1424'; ctx.fillRect(0, 200, W, 16);
   // 드레이코 실루엣 초상
   const por = getPortrait('draco', 'smirk');
-  if (por) ctx.drawImage(por, 0, H - 128, 128, 128);
+  if (por) { const sz = isIllust(por) ? 200 : 128; ctx.imageSmoothingEnabled = isIllust(por) && por.height !== sz; ctx.drawImage(por, -10, H - sz + (isIllust(por) ? 14 : 0), sz, sz); ctx.imageSmoothingEnabled = false; }
   if (T.sub === 'set') return drawSettings(T);
   if (T.sub === 'chap') return drawChapterSelect(T);
-  bigTxt('TS 말포이', W / 2 + 24, 22, 4, '#f1ecd2', 'center', '#2f8a4e');
-  bigTxt('은빛 운명', W / 2 + 24, 84, 2, '#9ad0b0', 'center', '#000');
+  bigTxt('TS 말포이', 282, 24, 3, '#f1ecd2', 'center', '#2f8a4e');
+  bigTxt('은빛 운명', 282, 74, 2, '#9ad0b0', 'center', '#000');
   titleItems().forEach(([s, act], i) => {
-    const on = i === T.sel, y = 130 + i * 19;
-    txt((on ? '▶ ' : '  ') + s, W / 2 - 40 + 24, y, !act ? '#555' : on ? '#ffe28a' : '#e8e8f0');
+    const on = i === T.sel, y = 118 + i * 19;
+    txt((on ? '▶ ' : '  ') + s, 244, y, !act ? '#555' : on ? '#ffe28a' : '#e8e8f0');
   });
   txt('비공식 2차 창작 팬게임 · 비영리', W - 6, H - 14, '#6a7a9a', 'right');
 }

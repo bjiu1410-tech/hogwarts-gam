@@ -14,6 +14,11 @@
 감정 이름: `normal` `smile` `smirk` `angry` `sad` `surprise` `blush` `cry`
 (감정별 그림이 없으면 `_normal` 그림을 대신 씁니다.)
 
+## 받은 일러스트
+- ✅ `draco_angry`, `draco_blush`, `draco_smirk` (원본: `art/original/`, 게임용 176×176은 `python3 art/export_portraits.py`로 생성)
+- 아직 없는 감정은 가까운 그림으로 대신 표시됩니다 (예: surprise → blush, normal → smirk).
+- 고해상도 일러스트도 그대로 주시면 됩니다. 자동으로 줄여서 넣습니다.
+
 ## 1순위: 히로인 드레이코 (TS, 원작 성격)
 - `portrait/draco_normal.png` ~ `draco_cry.png` (감정 8종 — 특히 `smirk` 비웃음, `blush` 당황이 많이 나옴)
 - `sprite/draco.png`

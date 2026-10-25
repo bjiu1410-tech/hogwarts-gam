@@ -298,9 +298,22 @@ function drawSpecialSprite(g, c, dir, f, P) {
 const PORTRAIT_EMOS = ['normal', 'smile', 'smirk', 'angry', 'sad', 'surprise', 'blush', 'cry'];
 const POR = {};
 const POR_SIZE = 64;
+// 직접 그린 일러스트가 있는 캐릭터는, 없는 감정을 가장 가까운 그림으로 대신한다 (도트와 섞이지 않게)
+const EMO_FALLBACK = {
+  normal: ['smirk', 'smile', 'blush', 'angry'], smile: ['smirk', 'normal', 'blush'], smirk: ['normal', 'smile', 'angry'],
+  angry: ['smirk', 'normal', 'surprise'], sad: ['blush', 'cry', 'normal'], cry: ['sad', 'blush', 'normal'],
+  surprise: ['blush', 'angry', 'normal'], blush: ['sad', 'surprise', 'normal', 'smile'],
+};
+function customPortrait(id, emo) {
+  for (const e of [emo, ...(EMO_FALLBACK[emo] || []), ...PORTRAIT_EMOS]) {
+    const im = Img.get('portrait/' + id + '_' + e + '.png'); if (im) return im;
+  }
+  return null;
+}
+function isIllust(p) { return p && !(p instanceof HTMLCanvasElement); }
 function getPortrait(id, emo) {
   const key = id + '_' + emo;
-  const custom = Img.get('portrait/' + key + '.png') || Img.get('portrait/' + id + '_normal.png');
+  const custom = customPortrait(id, emo);
   if (custom) return custom;
   if (POR[key]) return POR[key];
   const c = CHARS[id]; if (!c) return null;
