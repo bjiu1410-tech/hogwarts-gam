@@ -4,5 +4,9 @@
 window.ILLUST_FILES = [
   'portrait/draco_angry.png',
   'portrait/draco_blush.png',
+  'portrait/draco_cry.png',
+  'portrait/draco_normal.png',
+  'portrait/draco_sad.png',
   'portrait/draco_smirk.png',
+  'portrait/draco_surprise.png',
 ];

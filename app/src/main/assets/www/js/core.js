@@ -87,7 +87,7 @@ function inRect(p, x, y, w, h) { return p && p.x >= x && p.x < x + w && p.y >= y
 const KEYMAP = {
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left',
   ArrowRight: 'right', KeyD: 'right', KeyZ: 'a', Enter: 'a', Space: 'a', KeyX: 'b', Backspace: 'b',
-  ShiftLeft: 'b', Escape: 'menu', KeyM: 'menu',
+  ShiftLeft: 'b', Escape: 'menu', KeyM: 'menu', KeyC: 'spell', KeyJ: 'spell', KeyV: 'swap', KeyK: 'swap', Tab: 'swap',
 };
 const DIRS = ['up', 'down', 'left', 'right'];
 const Input = {

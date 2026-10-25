@@ -31,7 +31,7 @@ body.touch #pad { display: block; }
 #dpad .arm.on { background: #7fd1a0; }
 #btns {
   position: absolute; right: max(18px, env(safe-area-inset-right)); bottom: 26px;
-  width: 150px; height: 110px; pointer-events: auto;
+  width: 170px; height: 160px; pointer-events: auto;
 }
 .btn {
   position: absolute; width: 62px; height: 62px; border-radius: 50%;
@@ -39,8 +39,11 @@ body.touch #pad { display: block; }
   font: 20px 'Galmuri11', monospace; color: #1b2030;
   display: flex; align-items: center; justify-content: center;
 }
-.btn[data-k="a"] { right: 0; top: 0; background: #7fd1a0; }
-.btn[data-k="b"] { left: 0; top: 40px; }
+.btn[data-k="a"] { right: 0; top: 52px; background: #7fd1a0; }
+.btn[data-k="b"] { left: 30px; top: 94px; }
+.btn.sm { width: 48px; height: 48px; font-size: 18px; }
+.btn[data-k="spell"] { left: 0; top: 30px; background: #c8b0ff; }
+.btn[data-k="swap"] { right: 64px; top: 0; background: #b0d0ff; }
 .btn.on { opacity: .9; }
 #menuBtn {
   position: absolute; right: max(14px, env(safe-area-inset-right)); top: 10px;

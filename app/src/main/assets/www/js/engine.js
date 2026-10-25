@@ -57,6 +57,15 @@ const Script = {
           case 'face': push({ t: 'face', id: rest[0], dir: rest[1] }); break;
           case 'hide': push({ t: 'hide', id: rest[0] }); break;
           case 'player': push({ t: 'player', id: rest[0] }); break;
+          case 'learn': push({ t: 'learn', id: rest[0] }); break;
+          case 'givespell': push({ t: 'givespell', id: rest[0] }); break;
+          case 'enemy': push({ t: 'enemy', type: rest[0], x: +rest[1], y: +rest[2] }); break;
+          case 'roam': push({ t: 'roam', map: rest[0], x: +rest[1], y: +rest[2], dir: rest[3] || 'down' }); break;
+          case 'rnpc': push({ t: 'rnpc', map: rest[0], id: rest[1], x: +rest[2], y: +rest[3], dir: rest[4], to }); break;
+          case 'robj': push({ t: 'robj', map: rest[0], x: +rest[1], y: +rest[2], to }); break;
+          case 'target': push({ t: 'target', map: rest[0], x: +rest[1], y: +rest[2], to }); break;
+          case 'heal': push({ t: 'heal' }); break;
+          case 'onclear': push({ t: 'onclear', to }); break;
           default: errs.push(`알 수 없는 명령 @${cmd} (${ln})`);
         }
         return;
@@ -78,7 +87,10 @@ const Script = {
       if (l.t === 'explore' && !MAPS[l.map]) errs.push(`없는 맵 ${l.map} (${l.ln})`);
       if (l.t === 'bg' && l.id !== 'black' && !MAPS[l.id]) errs.push(`없는 배경 ${l.id} (${l.ln})`);
       if (l.t === 'mini' && !MINIS[l.type]) errs.push(`없는 미니게임 ${l.type} (${l.ln})`);
-      if (l.t === 'npc' && !CHARS[l.id]) errs.push(`없는 캐릭터 ${l.id} (${l.ln})`);
+      if ((l.t === 'npc' || l.t === 'rnpc') && !CHARS[l.id]) errs.push(`없는 캐릭터 ${l.id} (${l.ln})`);
+      if ((l.t === 'learn' || l.t === 'givespell') && !SPELLS[l.id]) errs.push(`없는 주문 ${l.id} (${l.ln})`);
+      if (l.t === 'enemy' && !ENEMIES[l.type]) errs.push(`없는 적 ${l.type} (${l.ln})`);
+      if ((l.t === 'roam' || l.t === 'rnpc' || l.t === 'robj' || l.t === 'target') && !MAPS[l.map]) errs.push(`없는 맵 ${l.map} (${l.ln})`);
     }
     this.lines = L; this.labels = labels;
     this.chapters = L.map((l, i) => l.t === 'chapter' ? i : -1).filter(i => i >= 0);
@@ -121,6 +133,7 @@ function setBg(id, x, y, instant) {
   G.bg = id;
   const m = MAPS[id];
   if (m) {
+    Magic.applyMods(m);
     const cx = x != null ? x * TS + 8 : m.w * TS / 2, cy = y != null ? y * TS + 8 : m.h * TS / 2;
     G.camX = camClamp(cx - W / 2, m.w * TS, W); G.camY = camClamp(cy - H / 2 + 20, m.h * TS, H);
     G.tint = m.tint || null;
@@ -170,7 +183,7 @@ function step() {
       case 'if': if (evalCond(L.cond)) G.pc = Script.labels[L.to]; break;
       case 'add': applyFx([{ k: L.k, v: L.v }]); break;
       case 'set': G.flags[L.k] = L.v; break;
-      case 'bg': G.ex = null; G.goal = ''; if (L.id === 'black') { G.bg = 'black'; G.tint = null; } else setBg(L.id, L.x, L.y); break;
+      case 'bg': G.ex = null; G.roam = null; G.goal = ''; if (L.id === 'black') { G.bg = 'black'; G.tint = null; } else setBg(L.id, L.x, L.y); break;
       case 'cg': G.cg = { id: L.id, chars: L.chars, cap: L.cap, t: 0 }; break;
       case 'cgoff': G.cg = null; break;
       case 'music': G.music = L.id; Snd.music(L.id); break;
@@ -184,6 +197,15 @@ function step() {
       case 'npc': if (G.ex) { G.ex.npcs = G.ex.npcs.filter(n => n.id !== L.id); G.ex.npcs.push({ id: L.id, x: L.x, y: L.y, dir: DIRN[L.dir] ?? 0, to: L.to, px: L.x * TS, py: L.y * TS, path: '', moving: 0, frame: 0 }); } break;
       case 'obj': if (G.ex) G.ex.objs.push({ x: L.x, y: L.y, to: L.to }); break;
       case 'exit': if (G.ex) G.ex.exits.push({ x: L.x, y: L.y, to: L.to }); break;
+      case 'learn': G.lastSay = null; G.mode = 'mini'; Mini.start('learn', L.id, () => { Magic.learn(L.id); G.mode = 'idle'; if (G.music) { Snd.cur = null; Snd.music(G.music); } step(); }); return;
+      case 'givespell': Magic.learn(L.id); break;
+      case 'enemy': Magic.addEnemy(L.type, L.x, L.y); break;
+      case 'heal': G.hp = G.maxHp; break;
+      case 'onclear': if (G.ex) G.ex.onClear = L.to; break;
+      case 'roam': setupExplore(L, G.pc - 1); G.roam = { npcs: [], objs: [], targets: [] }; populateRoam(); break;
+      case 'rnpc': if (G.roam) { G.roam.npcs.push(L); if (G.ex && G.ex.map.id === L.map) G.ex.npcs.push({ id: L.id, x: L.x, y: L.y, dir: DIRN[L.dir] ?? 0, to: L.to, px: L.x * TS, py: L.y * TS, moving: 0, frame: 0 }); } break;
+      case 'robj': if (G.roam) { G.roam.objs.push(L); if (G.ex && G.ex.map.id === L.map) G.ex.objs.push({ x: L.x, y: L.y, to: L.to }); } break;
+      case 'target': if (G.roam) { G.roam.targets.push(L); if (G.ex && G.ex.map.id === L.map) { G.ex.objs.push({ x: L.x, y: L.y, to: L.to }); G.ex.targets.push(L); } } break;
       case 'player': G.flags._player = L.id; if (G.ex) G.ex.player.id = L.id; break;
       case 'hide': if (G.ex) G.ex.npcs = G.ex.npcs.filter(n => n.id !== L.id); break;
       case 'face': { const n = findActor(L.id); if (n) n.dir = DIRN[L.dir] ?? 0; break; }
@@ -224,15 +246,42 @@ function startSay(L) {
 }
 
 // ===== 탐험 모드 =====
-function setupExplore(L, pc) {
+function setupExplore(L, pc, keepRoam) {
   const m = MAPS[L.map];
+  Magic.applyMods(m);
+  if (!keepRoam) { G.roam = null; Magic.reset(); }
   G.bg = L.map; G.tint = m.tint || null; G.cg = null;
   G.ex = {
     map: m, pcStart: pc, npcs: [], objs: [], exits: [], pushBack: null, done: new Set(),
+    enemies: [], targets: [], start: { x: L.x, y: L.y },
+    items: (m.items || []).filter(it => !G.flags['item_' + m.id + it.x + '_' + it.y]).map(it => ({ x: it.x * TS + 8, y: it.y * TS + 8, item: it.item, key: m.id + it.x + '_' + it.y })),
     player: { id: G.flags._player || PLAYER, x: L.x, y: L.y, px: L.x * TS, py: L.y * TS, dir: DIRN[L.dir] ?? 0, moving: 0, frame: 0, ft: 0, path: '' },
   };
-  G.goal = '';
+  if (!keepRoam) G.goal = '';
+  G.flags.enemies = 0;
   updateCam(true);
+}
+// 자유 시간: 현재 맵에 해당하는 인물/대상 배치
+function populateRoam() {
+  const e = G.ex, r = G.roam; if (!e || !r) return;
+  e.roam = true;
+  const id = e.map.id;
+  for (const [cid, x, y, dir, line] of (ROAM_CHATTER[id] || [])) e.npcs.push({ id: cid, x, y, dir: DIRN[dir] ?? 0, line, px: x * TS, py: y * TS, moving: 0, frame: 0 });
+  for (const n of r.npcs) if (n.map === id) e.npcs.push({ id: n.id, x: n.x, y: n.y, dir: DIRN[n.dir] ?? 0, to: n.to, px: n.x * TS, py: n.y * TS, moving: 0, frame: 0 });
+  for (const o of r.objs) if (o.map === id) e.objs.push({ x: o.x, y: o.y, to: o.to });
+  for (const t of r.targets) if (t.map === id) { e.objs.push({ x: t.x, y: t.y, to: t.to }); e.targets.push(t); }
+}
+function roamWarp(link) {
+  const keepGoal = G.goal;
+  setupExplore({ map: link.to, x: link.tx, y: link.ty, dir: link.dir }, G.ex.pcStart, true);
+  populateRoam(); G.goal = keepGoal;
+  G.fade = 1; G.fadeDir = -1; Snd.sfx('door');
+}
+function sayLine(id, text) { // 라벨 없이 한 줄 대사 (자유 시간 배경 인물)
+  const m = text.match(/^([^:]+):\s*(.*)$/);
+  const name = m ? m[1] : (CHARS[id] || {}).name, body = m ? m[2] : text;
+  startSay({ t: 'say', name, id, emo: 'normal', thought: false, text: body });
+  G.sayReturn = 'explore';
 }
 function occupied(x, y, self) {
   const e = G.ex; if (isSolid(e.map, x, y)) return true;
@@ -260,14 +309,19 @@ function updateExplore(dt) {
   if (!G.ex) { G.mode = 'idle'; return; }
   const e = G.ex, p = e.player;
   for (const n of e.npcs) { if (n.moving) stepActor(n, dt); else n.frame = 0; }
+  Magic.update(dt);
+  if (e.onClear && e.hadEnemies && !e.enemies.length && G.mode === 'explore' && !p.moving) { const t = e.onClear; e.onClear = null; runLabel(t); return; }
+  if (G.mode !== 'explore') return;
   if (p.moving) {
     if (stepActor(p, dt, Input.held.b ? 110 : 72)) {
       const ex = e.exits.find(x => x.x === p.x && x.y === p.y);
       if (ex) { e.pushBack = p.prev; p.frame = 0; runLabel(ex.to); return; }
-    } else return;
+      const link = e.roam && (MAP_LINKS[e.map.id] || []).find(l => l.x === p.x && l.y === p.y);
+      if (link) { roamWarp(link); return; }
+    } else { Magic.input(); return; }
   }
-  if (G.mode !== 'explore') return;
   if (Input.pressed.menu) { openPause(); return; }
+  Magic.input();
   const a = Input.axis();
   let dir = null;
   if (a.y < 0) dir = 3; else if (a.y > 0) dir = 0; else if (a.x < 0) dir = 1; else if (a.x > 0) dir = 2;
@@ -279,11 +333,25 @@ function updateExplore(dt) {
     if (n) { n.dir = [3, 2, 1, 0][p.dir]; e.done.add(n); Snd.sfx('sel'); runLabel(n.to); return; }
     const o = e.objs.find(o => o.x === fx && o.y === fy) || e.objs.find(o => o.x === p.x && o.y === p.y);
     if (o) { e.done.add(o); Snd.sfx('sel'); runLabel(o.to); return; }
+    const ln = e.npcs.find(n => n.x === fx && n.y === fy && n.line);
+    if (ln) { ln.dir = [3, 2, 1, 0][p.dir]; sayLine(ln.id, ln.line); return; }
+    const ch = tileAt(e.map, fx, fy);
+    if (ch === '$') { Magic.openChest(e.map, fx, fy); return; }
+    if (ch === '&') { Magic.floatAt('잠겨 있다. (알로호모라?)', '#c9d1e0', fx * TS + 8, fy * TS); return; }
+    if (ch === 'X') { Magic.floatAt('잠긴 문이다. (알로호모라?)', '#c9d1e0', fx * TS + 8, fy * TS); return; }
+    if (ch === ';') { Magic.floatAt('악마의 덫이 꿈틀거린다…', '#9ad0b0', fx * TS + 8, fy * TS); return; }
+    if (ch === 'o') { Magic.floatAt('무거운 바위. 마법으로 옮길 수 있을 것 같다.', '#c9d1e0', fx * TS + 8, fy * TS); return; }
+    if (ch === 'z') { Magic.floatAt('무너진 다리다. (레파로?)', '#c9d1e0', fx * TS + 8, fy * TS); return; }
+    if (ch === '%') { Magic.floatAt('금이 간 벽이다. 부술 수 있을지도.', '#c9d1e0', fx * TS + 8, fy * TS); return; }
+    if (ch === '^') { Magic.floatAt('불길이 길을 막고 있다.', '#ffb08a', fx * TS + 8, fy * TS); return; }
+    if (ch === 'q') { Magic.floatAt('질긴 덩굴과 거미줄이 뒤엉켜 있다.', '#c9d1e0', fx * TS + 8, fy * TS); return; }
   }
   if (TEST) testExplore();
 }
 function testExplore() { // 자동 테스트: 모든 대상과 상호작용 후 출구 사용
   const e = G.ex; e.testN = (e.testN || 0) + 1;
+  e.enemies = []; G.flags.enemies = 0;
+  if (e.roam && G.roam.targets.length && e.testN > 2) { runLabel(G.roam.targets[0].to); return; }
   if (e.testN > 60) { console.error('탐험 테스트 정지: ' + e.map.name + ' line ' + Script.lines[e.pcStart].ln); G.mode = 'stuck'; return; }
   const next = [...e.npcs.filter(n => n.to), ...e.objs].find(t => !e.done.has(t));
   if (next) { e.done.add(next); runLabel(next.to); return; }
@@ -310,6 +378,7 @@ function drawWorld() {
       const sh = getSprite(a.id);
       ctx.drawImage(sh, (a.frame || 0) * SPR_W, a.dir * SPR_H, SPR_W, SPR_H, Math.round(a.px + ox), Math.round(a.py + oy - 9), SPR_W, SPR_H);
     }
+    Magic.drawWorld(ox, oy);
     if (G.mode === 'explore') { // 상호작용 표시
       const p = G.ex.player, [dx, dy] = DV[p.dir];
       const n = G.ex.npcs.find(n => n.x === p.x + dx && n.y === p.y + dy && n.to) || G.ex.objs.find(o => o.x === p.x + dx && o.y === p.y + dy);
@@ -331,6 +400,7 @@ function drawWorld() {
     }
     ctx.restore();
   }
+  if (G.ex && G.ex.map === m) { Magic.drawDark(ox, oy); Magic.drawFloats(ox, oy); }
   // 떠다니는 먼지 / 반딧불
   if (G.tint) {
     const t = performance.now() / 1000;
@@ -405,11 +475,16 @@ function drawChoice() {
 }
 function drawHud() {
   if (G.goal && (G.mode === 'explore' || G.mode === 'idle')) {
-    const w = Math.min(W - 70, tw(G.goal) + 20); panel(4, 4, w, 19, 0.8); txt(G.goal, 12, 7, '#ffe28a');
+    const lines = wrap(G.goal, W - 70).slice(0, 2), w = Math.max(...lines.map(tw)) + 20;
+    panel(4, 4, w, 6 + lines.length * 14, 0.8); lines.forEach((l, i) => txt(l, 12, 7 + i * 14, '#ffe28a'));
+    G.goalH = 10 + lines.length * 14;
+  } else G.goalH = 4;
+  if (G.mode === 'explore' && G.ex) { const nm = G.ex.map.name; txt(nm, W - 8, H - 16, '#c9d1e0aa', 'right'); Magic.drawHud(); }
+  let y = Math.max(28, (G.goalH || 4) + 4);
+  for (const t of G.toasts.slice(-4)) {
+    const a = Math.min(1, t.t), w = Math.min(W - 16, tw(t.text) + 16);
+    ctx.globalAlpha = a; panel(W - 6 - w, y, w, 18, 0.88); txt(t.text, W - w + 2, y + 3, t.col); ctx.globalAlpha = 1; y += 20;
   }
-  if (G.mode === 'explore' && G.ex) { const nm = G.ex.map.name; txt(nm, W - 8, H - 16, '#c9d1e0aa', 'right'); }
-  let y = 28;
-  for (const t of G.toasts) { const a = Math.min(1, t.t); ctx.globalAlpha = a; panel(W - 150, y, 144, 18, 0.85); txt(t.text, W - 142, y + 3, t.col); ctx.globalAlpha = 1; y += 21; }
 }
 function drawCard() {
   const c = G.card; ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, W, H);
@@ -424,28 +499,32 @@ function drawCard() {
 
 // ===== 일시정지 메뉴 =====
 function openPause() { G.pause = { sel: 0, page: 'main', prevMode: G.mode }; G.mode = 'pause'; Snd.sfx('sel'); }
-const PAUSE_ITEMS = ['계속하기', '관계 / 상태', '설정', '타이틀로'];
+const PAUSE_ITEMS = ['계속하기', '주문책', '관계 / 수집', '설정', '타이틀로'];
 function updatePause() {
   const p = G.pause;
+  if (p.page === 'book') { updateBook(p); return; }
   if (p.page !== 'main') { if (p.page === 'settings') { if (updateSettings(p)) p.page = 'main'; return; } if (Input.ok() || Input.pressed.b || Input.pressed.menu) p.page = 'main'; return; }
-  if (Input.pressed.up) { p.sel = (p.sel + 3) % 4; Snd.sfx('sel'); }
-  if (Input.pressed.down) { p.sel = (p.sel + 1) % 4; Snd.sfx('sel'); }
-  if (Input.tap) for (let i = 0; i < 4; i++) if (inRect(Input.tap, 132, 60 + i * 24, 120, 22)) { p.sel = i; Input.pressed.a = true; }
+  const n = PAUSE_ITEMS.length;
+  if (Input.pressed.up) { p.sel = (p.sel + n - 1) % n; Snd.sfx('sel'); }
+  if (Input.pressed.down) { p.sel = (p.sel + 1) % n; Snd.sfx('sel'); }
+  if (Input.tap) for (let i = 0; i < n; i++) if (inRect(Input.tap, 132, 58 + i * 22, 120, 20)) { p.sel = i; Input.pressed.a = true; }
   if (Input.pressed.b || Input.pressed.menu) { G.mode = p.prevMode; G.pause = null; return; }
   if (Input.pressed.a) {
     Snd.sfx('ok');
     if (p.sel === 0) { G.mode = p.prevMode; G.pause = null; }
-    if (p.sel === 1) p.page = 'stats';
-    if (p.sel === 2) { p.page = 'settings'; p.ssel = 0; }
-    if (p.sel === 3) toTitle();
+    if (p.sel === 1) { p.page = 'book'; p.bsel = Math.max(0, Magic.known().indexOf(Magic.current())); }
+    if (p.sel === 2) p.page = 'stats';
+    if (p.sel === 3) { p.page = 'settings'; p.ssel = 0; }
+    if (p.sel === 4) toTitle();
   }
 }
 function drawPause() {
   const p = G.pause; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, W, H);
   if (p.page === 'stats') return drawStats();
   if (p.page === 'settings') return drawSettings(p);
-  panel(120, 40, 144, 120); bigTxt('일시정지', W / 2, 44, 1, '#9ad0b0');
-  PAUSE_ITEMS.forEach((s, i) => txt((i === p.sel ? '▶ ' : '  ') + s, 140, 64 + i * 24, i === p.sel ? '#ffe28a' : '#e8e8f0'));
+  if (p.page === 'book') return drawBook(p);
+  panel(120, 34, 144, 134); bigTxt('일시정지', W / 2, 38, 1, '#9ad0b0');
+  PAUSE_ITEMS.forEach((s, i) => txt((i === p.sel ? '▶ ' : '  ') + s, 140, 60 + i * 22, i === p.sel ? '#ffe28a' : '#e8e8f0'));
   txt('체크포인트에서 자동 저장됩니다', W / 2, 170, '#9ab0d0', 'center');
 }
 function drawStats() {
@@ -455,14 +534,16 @@ function drawStats() {
   rows.forEach(([k, nm, col], i) => {
     const v = G.flags[k] || 0, y = 54 + i * 28;
     const por = getPortrait(k === 'courage' ? 'harry' : k, k === 'draco' ? 'smirk' : 'normal');
-    if (por) ctx.drawImage(por, 52, y - 4, 20, 20);
+    if (por) { ctx.imageSmoothingEnabled = isIllust(por); ctx.drawImage(por, 52, y - 4, 20, 20); ctx.imageSmoothingEnabled = false; }
     txt(nm, 80, y, '#e8e8f0');
     const max = k === 'draco' ? 50 : 15;
     ctx.fillStyle = '#222'; ctx.fillRect(200, y + 3, 120, 8);
     ctx.fillStyle = col; ctx.fillRect(200, y + 3, clamp(v / max, 0, 1) * 120, 8);
     txt(String(v), 328, y, col);
   });
-  txt('A / B : 돌아가기', W / 2, 176, '#9ab0d0', 'center');
+  const cards = (G.flags._cards || '').split('|').filter(Boolean).length;
+  txt(`배운 주문 ${Magic.known().length} / ${SPELL_ORDER.length}    개구리 초콜릿 카드 ${cards} / ${CARDS.length}`, W / 2, 166, '#c8f0ff', 'center');
+  txt('A / B : 돌아가기', W / 2, 180, '#9ab0d0', 'center');
 }
 function updateSettings(p) {
   const n = 4;
@@ -612,6 +693,7 @@ function update(dt) {
         if (Input.ok() && !fast) s.shown = len;
       } else if (Input.ok() || fast || TEST) {
         if (s.page < s.pages.length - 1) { s.page++; s.shown = 0; }
+        else if (G.sayReturn) { G.mode = G.sayReturn; G.sayReturn = null; G.say = null; }
         else { G.lastSay = s; G.say = null; G.mode = 'idle'; step(); }
       }
       break;
@@ -664,4 +746,32 @@ function draw() {
   }
   if (G.flash > 0) { ctx.globalAlpha = clamp(G.flash * 2, 0, 1); ctx.fillStyle = G.flashCol; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
   if (G.fade > 0) { ctx.fillStyle = `rgba(0,0,0,${G.fade})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// ===== 주문책 =====
+function updateBook(p) {
+  const k = Magic.known();
+  if (Input.pressed.b || Input.pressed.menu) { p.page = 'main'; return; }
+  if (!k.length) { if (Input.ok()) p.page = 'main'; return; }
+  if (Input.pressed.up) p.bsel = (p.bsel + k.length - 1) % k.length;
+  if (Input.pressed.down) p.bsel = (p.bsel + 1) % k.length;
+  if (Input.pressed.left) p.bsel = Math.max(0, p.bsel - 8);
+  if (Input.pressed.right) p.bsel = Math.min(k.length - 1, p.bsel + 8);
+  if (Input.tap) k.forEach((_, i) => { const col = Math.floor(i / 8), row = i % 8; if (inRect(Input.tap, 22 + col * 120, 34 + row * 15, 118, 14)) { p.bsel = i; Input.pressed.a = true; } });
+  if (Input.pressed.a) { G.flags._cur = k[p.bsel]; Snd.sfx('ok'); G.toasts.push({ text: `장착: ${SPELLS[k[p.bsel]].name}`, col: SPELLS[k[p.bsel]].col, t: 1.6 }); }
+}
+function drawBook(p) {
+  panel(14, 8, W - 28, H - 30);
+  bigTxt('주문책', W / 2, 12, 1, '#9ad0b0');
+  const k = Magic.known();
+  if (!k.length) { txt('아직 배운 주문이 없다.', W / 2, 90, '#c9d1e0', 'center'); return; }
+  k.forEach((id, i) => {
+    const col = Math.floor(i / 8), row = i % 8, x = 24 + col * 120, y = 34 + row * 15, S = SPELLS[id], on = i === p.bsel;
+    if (on) { ctx.fillStyle = 'rgba(47,138,78,.45)'; ctx.fillRect(x - 3, y - 2, 118, 14); }
+    ctx.fillStyle = S.col; ctx.fillRect(x, y + 3, 6, 6);
+    txt((id === Magic.current() ? '★' : '') + (S.short || S.name), x + 10, y, on ? '#ffe28a' : '#e8e8f0');
+  });
+  const S = SPELLS[k[p.bsel]];
+  if (S) { const lines = wrap(S.name + ' — ' + S.desc, W - 60); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(22, 156, W - 44, 32); lines.slice(0, 2).forEach((l, i) => txt(l, 28, 158 + i * 15, '#c8f0ff')); }
+  txt('A: 장착   B: 닫기   (탐험 중 ✦/C: 시전 · ⇄/V: 주문 바꾸기)', W / 2, H - 18, '#9ab0d0', 'center');
 }

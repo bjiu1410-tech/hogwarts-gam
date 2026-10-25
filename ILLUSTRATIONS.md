@@ -15,7 +15,7 @@
 (감정별 그림이 없으면 `_normal` 그림을 대신 씁니다.)
 
 ## 받은 일러스트
-- ✅ `draco_angry`, `draco_blush`, `draco_smirk` (원본: `art/original/`, 게임용 176×176은 `python3 art/export_portraits.py`로 생성)
+- ✅ `draco_angry`, `draco_blush`, `draco_smirk`, `draco_normal`, `draco_cry`, `draco_surprise`, `draco_sad` (드레이코 감정 7종 완료, smile만 남음) (원본: `art/original/`, 게임용 176×176은 `python3 art/export_portraits.py`로 생성)
 - 아직 없는 감정은 가까운 그림으로 대신 표시됩니다 (예: surprise → blush, normal → smirk).
 - 고해상도 일러스트도 그대로 주시면 됩니다. 자동으로 줄여서 넣습니다.
 

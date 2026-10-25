@@ -107,12 +107,12 @@ const MAPS = {
     'T............................T',
     'T.P......P......P......P.....T',
     'T............................T',
-    'T============================T',
+    'D============================D',
     'T............................T',
     'T.P......P......P......P.....T',
     'T............................T',
-    'T#####D############D#########T',
-  ] },
+    'T#####D######?#####D#########T',
+  ], hidden: { '13,9': 'D' } },
   classroom: { name: '지하 마법약 교실', tint: 'rgba(20,40,30,0.25)', rows: [
     'TTTTTTTTTTTTTTTTTTTT',
     'T#B#k#BBBB#k#B#W#B#T',
@@ -125,7 +125,7 @@ const MAPS = {
     'T,,,,,,,,,,,,,,,,,,T',
     'T########D#########T',
   ] },
-  library: { name: '도서관', rows: [
+  library: { name: '도서관', floor: ',', rows: [
     'VTTTTTTTTTTTTTTTTTTV',
     'VTBBBBBW#k#WBBBBBBTV',
     'VT,,,,,,,,,,,,,,,,TV',
@@ -134,16 +134,16 @@ const MAPS = {
     'VT,tt,,tt,,tt,,tt,TV',
     'VT,,,,,,,,,,,,,,,,TV',
     'VTBBB,BBB,,BBB,BBBTV',
-    'VT,,,,,,,,,,,,,,,,TV',
+    'VT&,,,,,,,,,,,,,,,TV',
     'VT#######D########TV',
-  ] },
-  grounds: { name: '호그와트 교정', rows: [
+  ], chests: { '2,8': 'spell:revelio' } },
+  grounds: { name: '호그와트 교정', floor: 'g', chests: { '32,5': 'card' }, rows: [
     'TTTTTTTTTTTTTTTTTTTTTTggggggggggwwww',
     '#W##k##W##D##W##k##W#Tggggggggggwwww',
     'ggggggggggpggggggggggggGgggggggwwwww',
     'ggGggggggggpggggggggggggggggggwwwwww',
     'ggggggggggggpppppppppppppgggggwwwwww',
-    'gggfggggggggpgggggggggggpgggggwwwwww',
+    'gggfggggggggpgggggggggggpgggggzz$www',
     'ggfffgggggggpggggggGggggpggggggwwwww',
     'gfffffgghhhgpgggggggggggpgggggggwwww',
     'gfffffgghDhppgggggggggggpggggggggwww',
@@ -244,6 +244,79 @@ const MAPS = {
     'T......................T',
     'T##########D###########T',
   ] },
+  gryff: { name: '그리핀도르 휴게실', floor: ',', chests: { '16,5': 'card' }, rows: [
+    'VTTTTTTTTTTTTTTTTTTV',
+    'VT#W#R#W#FF#W#R#W#TV',
+    'VT,,,,,,,,,,,,,,,,TV',
+    'VT,a,,a,,====,,a,,TV',
+    'VT,,,,,,,====,,,,,TV',
+    'VT,,,,,,,====,,,$,TV',
+    'VT,a,,,,,,,,,,,,a,TV',
+    'VT,,,,,tt,,,,tt,,,TV',
+    'VT,,,,,,,,,,,,,,,,TV',
+    'VT#######D########TV',
+  ] },
+  secret: { name: '비밀의 방 (복도 아래)', dark: true, chests: { '2,3': 'card', '11,3': 'spell:accio', '2,6': 'heal' }, items: [{ x: 10, y: 6, item: 'card' }], rows: [
+    'TTTTTTTTTTTTTT',
+    'T#k####B###k#T',
+    'T............T',
+    'T.$........&.T',
+    'T............T',
+    'T....q.q.....T',
+    'T.$.o.....o..T',
+    'T............T',
+    'T######D#####T',
+  ] },
+  trapdoor: { name: '지하 함정 (마법사의 돌)', dark: true, chests: { '2,12': 'heal', '21,1': 'card' },
+    puzzle: { set: [[21, 1, '$']], msg: '네 개의 화로가 타오르자, 벽 한쪽이 스르르 열렸다!' }, hidden: {}, rows: [
+    'TTTTTTTTTTTTTTTTTTTTTTTT',
+    'T;;;;;;;;;;#.........?.T',
+    'T;;......;;#...........T',
+    'T;........;#...!...!...T',
+    'T;.........X...........T',
+    'T;;......;;#...!...!...T',
+    'T;;;;;;;;;;#...........T',
+    'T#####;#################',
+    'T.....;.....#..........T',
+    'T...........#..........T',
+    'T..o........#....E.....T',
+    'T...........#..........T',
+    'T.$.........#..........T',
+    'T...........#..........T',
+    'T...........X..........T',
+    'TTTTTTTTTTTTTTTTTTTTTTTT',
+  ] },
+  chamber: { name: '비밀의 방으로 가는 하수관', dark: true, tint: 'rgba(20,40,20,0.25)', rows: [
+    'TTTTTTTTTTTTTTTTTTTTTTTTTT',
+    'T#####k#######k#######k##T',
+    'T....q.......o.....w.....T',
+    'T....q.......o.....w.....T',
+    'T....q.......o.....w.....T',
+    'T###################.....T',
+    'VVVVVVVVVVVVVVVVVVVT.....T',
+    'VVVVVVVVVVVVVVVVVVVT..P..T',
+    'VVVVVVVVVVVVVVVVVVVT.....T',
+    'VVVVVVVVVVVVVVVVVVVT##S##T',
+  ] },
+  maze: { name: '트라이위저드 미로', floor: 'g', tint: 'rgba(10,20,40,0.35)', dark: true, rows: [
+    'fffffffffffffffffffffffff',
+    'fgggggqgggggggggggggggggf',
+    'fgffffffffff^ffffffffffgf',
+    'fgfgggggggggggggggqgggfgf',
+    'fgfgfffffffffffffffffgfgf',
+    'fgfgfgggggggggggggggfgfgf',
+    'fgfgfgfffffffffffffgfgfgf',
+    'fgfgfgfgggggggggggfgfgfgf',
+    'fgfgfgqgggggggggggfgfgfgf',
+    'fgfgfgfgggggggggggfgfgfgf',
+    'fgfgfgfffffffffffffgfgfgf',
+    'fgfgfgggggggggggggggfgfgf',
+    'fgfgffffffff%ffffffffgfgf',
+    'fgfgggggggggggggggggggfgf',
+    'fgfffffffffffffffffffffgf',
+    'fgggggggggggggggggggggggf',
+    'ffffffffffffgffffffffffff',
+  ] },
   hospital: { name: '의무실', rows: [
     'VTTTTTTTTTTTTTTTTTTV',
     'VT#W###W###W###W##TV',
@@ -257,9 +330,11 @@ const MAPS = {
   ] },
 };
 // 정규화
-for (const m of Object.values(MAPS)) {
+for (const [id, m] of Object.entries(MAPS)) {
+  m.id = id;
   m.w = Math.max(...m.rows.map(r => r.length));
   m.rows = m.rows.map(r => r.padEnd(m.w, 'V'));
+  m.base = m.rows.slice();
   m.h = m.rows.length;
   m.canvas = null;
 }

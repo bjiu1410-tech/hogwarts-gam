@@ -163,10 +163,10 @@ const MINIS = {
   // --- 마법 결투 ---
   duel: {
     init(m, v) {
-      const E = { draco: ['draco', 3, 1.35], harry: ['harry', 3, 1.3], troll: ['troll', 3, 1.0], deatheater: ['deatheater', 4, 1.5], bellatrix: ['bellatrix', 4, 1.7], boggart: ['hooded', 3, 1.2], hooded: ['hooded', 3, 1.25], dementor: ['hooded', 3, 1.3] }[v] || ['harry', 3, 1.3];
+      const E = { quirrell: ['quirrell', 4, 1.4], draco: ['draco', 3, 1.35], harry: ['harry', 3, 1.3], troll: ['troll', 3, 1.0], deatheater: ['deatheater', 4, 1.5], bellatrix: ['bellatrix', 4, 1.7], boggart: ['hooded', 3, 1.2], hooded: ['hooded', 3, 1.25], dementor: ['hooded', 3, 1.3] }[v] || ['harry', 3, 1.3];
       m.enemy = E[0]; m.ehp = E[1]; m.emax = E[1]; m.speed = E[2]; m.hp = 3; m.cur = 0; m.dir = 1;
       m.zone = 0.5; m.zw = 0.22; m.flash = 0; m.msg = ''; m.mt = 0; m.cool = 0;
-      m.title = { troll: '트롤을 막아라!', hooded: '두건 쓴 자를 막아라!', boggart: '보가트를 물리쳐라!', dementor: '디멘터를 쫓아내라!' }[v] || '마법 결투!';
+      m.title = { quirrell: '퀴렐을 막아라!', troll: '트롤을 막아라!', hooded: '두건 쓴 자를 막아라!', boggart: '보가트를 물리쳐라!', dementor: '디멘터를 쫓아내라!' }[v] || '마법 결투!';
       m.help = '막대가 초록 구간에 왔을 때 A(또는 화면 터치)!';
       m.spells = { troll: ['스투페파이!', '익스펠리아르무스!'], boggart: ['리디큘러스!'], dementor: ['익스펙토 페트로눔!'] }[v] || ['엑스펠리아르무스!', '스투페파이!', '프로테고!', '리크투셈프라!'];
       m.newZone = () => { m.zw = Math.max(0.1, 0.22 - (m.emax - m.ehp) * 0.03); m.zone = rnd(0.15 + m.zw / 2, 0.85 - m.zw / 2); };
@@ -301,6 +301,73 @@ const MINIS = {
       }
       txt(`${m.hit} / ${m.notes.length}`, W - 8, 6, '#ffe28a', 'right');
       if (m.ft > 0) bigTxt(m.fb, m.hx + 60, 140, 2, '#ffe28a');
+    },
+  },
+  // --- 주문 학습: 지팡이 동작 따라 하기 + 주문 외우기 타이밍 ---
+  learn: {
+    init(m, v) {
+      const S = SPELLS[v]; m.S = S; m.seq = S.motion;
+      m.title = '주문 연습: ' + S.name; m.help = '지팡이 동작을 기억해 따라 한 뒤, 빛이 가운데 올 때 A!';
+      m.sub = 'show'; m.st = -0.3; m.show = 0; m.inp = 0; m.miss = 0; m.lit = -1; m.lt = 0; m.cur = 0; m.cdir = 1; m.trail = [];
+      m.winText = S.name + ' 습득!'; m.loseText = '어설프지만… 일단 익혔다!';
+    },
+    update(m, dt) {
+      if (m.lt > 0) m.lt -= dt; else m.lit = -1;
+      for (const t of m.trail) t.t -= dt; m.trail = m.trail.filter(t => t.t > 0);
+      if (m.sub === 'show') {
+        m.st += dt;
+        if (m.st > 0.62) { m.st = 0; if (m.show < m.seq.length) { m.lit = m.show; m.lt = 0.45; m.show++; Snd.sfx('sel'); } else { m.sub = 'input'; } }
+        return;
+      }
+      if (m.sub === 'input') {
+        let d = DIRS.find(k => Input.pressed[k]);
+        if (!d && Input.tap) { const p = Input.tap; d = Math.abs(p.x - W / 2) > Math.abs(p.y - 100) ? (p.x > W / 2 ? 'right' : 'left') : (p.y > 100 ? 'down' : 'up'); }
+        if (!d) return;
+        m.trail.push({ d, t: 0.5 });
+        if (d === m.seq[m.inp]) { m.inp++; Snd.sfx('ok'); if (m.inp >= m.seq.length) { m.sub = 'chant'; m.cur = 0; } }
+        else { m.miss++; Snd.sfx('no'); if (m.miss >= 3) return Mini.finish(m, 'lose'); m.sub = 'show'; m.show = 0; m.inp = 0; m.st = -0.5; }
+        return;
+      }
+      if (m.sub === 'chant') {
+        m.cur += m.cdir * dt * 1.25; if (m.cur > 1) { m.cur = 1; m.cdir = -1; } if (m.cur < 0) { m.cur = 0; m.cdir = 1; }
+        if (Input.ok()) {
+          if (Math.abs(m.cur - 0.5) < 0.13) { Snd.sfx('spell'); return Mini.finish(m, 'win'); }
+          m.miss++; Snd.sfx('no'); if (m.miss >= 3) return Mini.finish(m, 'lose');
+        }
+      }
+    },
+    draw(m) {
+      ctx.fillStyle = '#10141c'; ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(mapCanvas(MAPS.classroom), (W - MAPS.classroom.w * TS) / 2, (H - MAPS.classroom.h * TS) / 2);
+      ctx.fillStyle = 'rgba(5,8,16,.72)'; ctx.fillRect(0, 0, W, H);
+      const S = m.S;
+      bigTxt(S.name, W / 2, 10, 2, S.col);
+      txt(m.sub === 'show' ? '지팡이 동작을 잘 봐…' : m.sub === 'input' ? `따라 해! (${m.inp}/${m.seq.length})` : '지금이다— 주문을 외워! (A)', W / 2, 44, '#c9d1e0', 'center');
+      // 동작 화살표
+      const n = m.seq.length, gap = 40, x0 = W / 2 - (n - 1) * gap / 2;
+      m.seq.forEach((d, i) => {
+        const x = x0 + i * gap, y = 82, done = i < m.inp, on = m.lit === i;
+        panel(x - 16, y - 16, 32, 32, 0.9);
+        const show = m.sub === 'show' ? i < m.show : true;
+        if (show) drawArrow(x, y, d, on ? '#ffe28a' : done ? S.col : (m.sub === 'show' ? '#c9d1e0' : '#3a4050'));
+      });
+      // 해리와 지팡이
+      drawChar('harry', 80, 190, 2, 0, 3);
+      const t = performance.now() / 1000, wx = 112, wy = 140;
+      ctx.fillStyle = '#6a4426'; ctx.fillRect(wx, wy, 14, 2);
+      ctx.fillStyle = S.col; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 8); ctx.fillRect(wx + 13, wy - 2, 5, 5); ctx.globalAlpha = 1;
+      for (const tr of m.trail) { ctx.globalAlpha = tr.t * 2; drawArrow(wx + 30 + ({ left: -12, right: 12 }[tr.d] || 0), wy + ({ up: -12, down: 12 }[tr.d] || 0), tr.d, S.col); } ctx.globalAlpha = 1;
+      // 주문 외우기 타이밍 바
+      if (m.sub === 'chant') {
+        const gx = 170, gy = 150, gw = 180;
+        ctx.fillStyle = '#0c0e14'; ctx.fillRect(gx - 2, gy - 2, gw + 4, 14);
+        ctx.fillStyle = '#2a2a3a'; ctx.fillRect(gx, gy, gw, 10);
+        ctx.fillStyle = S.col; ctx.globalAlpha = 0.6; ctx.fillRect(gx + gw * 0.37, gy, gw * 0.26, 10); ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff'; ctx.fillRect(gx + m.cur * gw - 1, gy - 4, 3, 18);
+        txt('「' + S.name + '!」', gx + gw / 2, gy + 18, S.col, 'center');
+      }
+      txt(`실수 ${m.miss}/3`, W - 8, H - 16, '#9ab0d0', 'right');
+      const lines = wrap(S.desc, 190); lines.slice(0, 3).forEach((l, i) => txt(l, 170, 100 + i * 14 + (m.sub === 'chant' ? -6 : 10), '#9ab0d0'));
     },
   },
 };

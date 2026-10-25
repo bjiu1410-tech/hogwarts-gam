@@ -206,6 +206,12 @@ const STORY = String.raw`
 # y1_potions
 @fade
 @bg classroom 10 4
+@music school
+: 첫 주. 조그만 플리트윅 교수의 마법 수업에서, 해리는 처음으로 진짜 주문을 배웠다.
+@learn lumos
+: 지팡이 끝에 작은 빛이 맺혔다. 슬리데린 쪽에서 콧방귀 소리가 들렸다.
+드레이코(smirk): 루모스 정도로 뭘 그렇게 감동해, 포터. 난 다섯 살 때 했어.
+해리*: (……다섯 살한테 지팡이를 줬다고?)
 @music slyth
 스네이프: 이 수업에선 어리석게 지팡이를 휘두르지 않는다. 마법약이라는 섬세한 기술을 이해할 자가 이 중 몇이나 될지.
 스네이프(smirk): 포터. 우리의 새로운… 유명 인사. 아스포델 뿌리 가루를 쑥 우린 물에 넣으면 무엇이 되지?
@@ -285,6 +291,61 @@ const STORY = String.raw`
 
 # y1_halloween
 @fade
+@music school
+@bg classroom 10 4
+: 10월. 마법 수업에서는 물건을 띄우는 주문을 배웠다. 휙, 그리고 톡.
+헤르미온느: 윙가르디-움 레비오-사야, 론. '가'를 길고 또렷하게.
+@learn wingardium
+: 해리의 깃털이 천장까지 둥실 떠올랐다. 론의 깃털은 터져 버렸다.
+@fade
+: 할로윈 날 오후. 수업이 없는 자유 시간이다.
+@roam corridor 12 6 down
+@goal 자유 시간: 성을 둘러본 뒤 저녁에 대연회장(할로윈 만찬)으로
+@rnpc library hermione 5 6 right -> y1r_her
+@rnpc gryff ron 10 6 down -> y1r_ron
+@rnpc grounds neville 14 8 left -> y1r_nev
+@rnpc corridor draco 20 3 down -> y1r_draco
+@target hall 11 9 -> y1_halloween_feast
+@play
+# y1r_her
+@if sp_alohomora -> y1r_her2
+헤르미온느: 해리! 이 주문 알아? 알로호모라. 잠긴 문을 여는 거야. 1학년 교과서엔 없지만 『표준 주문집』에 있더라.
+헤르미온느: 도서관 구석의 자물쇠 상자도 이걸로 열린대. 해 봐!
+@learn alohomora
+@back
+# y1r_her2
+헤르미온느: 연습 많이 해. 잠긴 문 앞에서 써 보면 돼. …규칙 위반은 하지 말고.
+@back
+# y1r_ron
+론: 해리, 휴게실 구석 상자 봤어? 프레드랑 조지가 개구리 초콜릿 숨겨 둔 거래. 열어 봐.
+론: 아 그리고 교정 호수 섬에도 상자가 있대. 다리가 무너져서 아무도 못 가지만.
+@back
+# y1r_nev
+네빌(sad): 트레버가 호수 쪽으로 갔다가 돌아왔어. 근데 섬에 반짝이는 게 있었대. …트레버가 그랬어.
+@back
+# y1r_draco
+@if y1r_draco_done -> y1r_draco2
+드레이코(smirk): 포터, 혼자 성 구경이니? 길 잃으면 울지 말고 사감 불러.
+: 말포이는 보란 듯이 지팡이를 휘둘렀다. "플리펜도!" 복도 끝의 갑옷이 휘청 밀려났다.
+드레이코(smirk): 퀴렐 수업에서 배운 밀쳐내기 주문이야. 너 같은 건 한 방이지.
+해리*: (지팡이를 오른쪽으로 두 번… 그렇게 하는 거구나.)
+@learn flipendo
+> "가르쳐 줘서 고마워." {draco+1} -> y1r_draco_t
+> "다음엔 내가 밀어 줄게." {courage+1} -> y1r_draco_r
+# y1r_draco_t
+드레이코(surprise): 가, 가르쳐 준 거 아니거든! 보여 준 거야! 자랑한 거라고!
+@set y1r_draco_done
+@back
+# y1r_draco_r
+드레이코(smirk): 해 보시든가. 말포이는 안 밀려.
+@set y1r_draco_done
+@back
+# y1r_draco2
+드레이코: …왜 또 와. 할 말 없으면 가.
+@back
+
+# y1_halloween_feast
+@fade
 @music tension
 @bg hall 11 8
 : 할로윈 만찬. 헤르미온느의 자리가 비어 있다. 론이 무심코 한 말에 상처받고 화장실에서 울고 있다고 했다.
@@ -301,16 +362,30 @@ const STORY = String.raw`
 론(angry): 알았어, 알았어! 내 탓이야! 빨리 가자!
 @back
 # y1_hw_bath
-@bg bathroom 7 4
+@explore bathroom 7 7 up
 헤르미온느(cry): 해, 해리? 론?
 : 쿵. 쿵. 몽둥이를 끄는 소리. 4미터는 될 법한 트롤이 세면대를 박살 내고 있었다.
-@mini duel troll
-@if last==win -> y1_hw_win
-론(angry): 윙가르디움 레비오사!
-: 론의 주문에 몽둥이가 둥실 떠올랐다가— 트롤의 머리 위로 떨어졌다. 쿵.
-@goto y1_hw_after
+@set _cur wingardium
+@enemy troll 7 2
+@npc hermione 2 2 down -> y1_hw_her
+@npc ron 9 7 up -> y1_hw_ron2
+@exit 7 8 -> y1_hw_noescape
+@onclear -> y1_hw_win
+@goal 트롤의 몽둥이를 띄워라! (✦/C키: 윙가르디움 레비오사 — 트롤을 향해 쏘기)
+@play
+# y1_hw_her
+헤르미온느(cry): 몽둥이야! 몽둥이를 띄워서 떨어뜨려!
+@back
+# y1_hw_ron2
+론(angry): 세면대 뒤에 숨지 말고 옆으로 돌아가! 정면에서 쏴!
+@back
+# y1_hw_noescape
+해리*: (헤르미온느를 두고 갈 순 없어!)
+@back
 # y1_hw_win
-: 해리가 시간을 버는 사이, 론의 주문이 몽둥이를 띄웠다. 몽둥이는 트롤의 머리 위로 정확히 떨어졌다. 쿵!
+@bg bathroom 7 4
+: 세 번째 주문에 몽둥이가 높이 떠올랐다가— 트롤의 머리 위로 떨어졌다. 쿵!
+: 트롤은 바닥을 울리며 쓰러졌다.
 @add courage 1
 # y1_hw_after
 헤르미온느(cry): 고마워… 둘 다.
@@ -390,10 +465,47 @@ const STORY = String.raw`
 드레이코(surprise): …진짜?
 드레이코(blush): 흥. 당연히 그래야지. …고, 고맙다는 말은 안 할 거야.
 @set secret_kept
-@goto y1_end
+@goto y1_trapdoor
 # y1_fo_tease
 드레이코(angry): 포터어어!
 : 둘 다 사서 핀스 부인에게 쫓겨났다. 쫓겨나면서도 말포이는 해리 팔을 꼬집었다.
+
+# y1_trapdoor
+@fade
+@music tension
+@bg black
+: 6월. 해리와 론, 헤르미온느는 머리 셋 달린 개 플러피를 잠재우고, 함정 문 아래로 뛰어내렸다.
+@if sp_incendio -> y1_td_a
+헤르미온느: 해리! 인센디오 알지? 불꽃 주문이야. 아래에 뭐가 있을지 모르니까 지금 익혀!
+@learn incendio
+# y1_td_a
+@if sp_alohomora -> y1_td_b
+헤르미온느: 그리고 알로호모라! 잠긴 문은 이걸로 여는 거야.
+@learn alohomora
+# y1_td_b
+@explore trapdoor 5 3 down
+@npc hermione 4 2 down -> y1_td_her
+@npc ron 6 2 down -> y1_td_ron
+@obj 17 10 -> y1_td_mirror
+@goal 함정을 돌파해 돌이 있는 방으로! (어두우면 루모스, 덩굴엔 불, 잠긴 문엔 알로호모라)
+@play
+# y1_td_her
+헤르미온느(surprise): 이건 악마의 덫이야! 빛과 불을 싫어해. 루모스를 켜고 다가가거나, 인센디오로 태워!
+@back
+# y1_td_ron
+론: 오른쪽 위 방엔 화로가 네 개 있대. 전부 불을 붙이면 뭔가 열린다던데? …아니면 그냥 체스판이 나오든가.
+@back
+# y1_td_mirror
+@music dark
+@bg trapdoor 17 11
+: 마지막 방. 커다란 거울 앞에 서 있는 건 스네이프가 아니라— 퀴렐 교수였다.
+퀴렐(smirk): 포터. 여기서 만날 줄 알았지.
+: 퀴렐이 터번을 풀었다. 그 뒤통수에서, 창백한 얼굴이 해리를 노려보았다.
+볼드모트(angry): 돌을 내놓아라…!
+@mini duel quirrell
+: 퀴렐의 손이 해리에게 닿는 순간, 그의 살갗이 타들어 갔다. 어머니가 남긴 보호의 마법이었다.
+: 해리는 정신을 잃었다. 마지막으로 본 것은, 손바닥 안에서 빛나는 붉은 돌이었다.
+@heal
 
 # y1_end
 @fade
@@ -541,8 +653,88 @@ const STORY = String.raw`
 # y2_dobby_end
 
 @fade
+@music school
+@bg classroom 10 4
+: 록허트의 '어둠의 마법 방어술' 수업. 그가 우리 덮개를 걷자, 새파란 콘월 픽시들이 교실로 쏟아져 나왔다!
+록허트(smile): 자, 여러분! 픽시들을 처리해 보세요! 고작 픽시랍니다!
+: 그리고 록허트는 책상 밑으로 들어갔다.
+헤르미온느(angry): 해리, 이모빌러스야! 날아다니는 걸 그 자리에 얼리는 주문!
+@learn immobulus
+@explore classroom 9 8 up
+@set _cur immobulus
+@enemy pixie 4 2
+@enemy pixie 14 2
+@enemy pixie 6 4
+@enemy pixie 13 4
+@enemy pixie 10 6
+@npc hermione 12 8 up -> y2_px_her
+@npc lockhart 10 2 down -> y2_px_lock
+@onclear -> y2_px_end
+@goal 픽시를 모두 잡아라! (이모빌러스로 얼리기 · ⇄/V키로 주문 바꾸기)
+@play
+# y2_px_her
+헤르미온느: 얼린 다음에 다른 주문으로 마무리해도 돼!
+@back
+# y2_px_lock
+록허트(surprise): 아, 해리! 자네라면 할 수 있어! 나는… 음, 관찰 중이라네!
+@back
+# y2_px_end
+@bg classroom 10 4
+: 마지막 픽시가 얼어붙은 채 바닥에 떨어졌다. 책상 밑에서 록허트가 슬그머니 기어 나왔다.
+록허트(smile): 훌륭해! 내가 가르친 대로군!
+헤르미온느(angry): …아무것도 안 가르치셨잖아요.
+@fade
+@music school
+: 겨울. 깁스를 푼 해리에게 다시 자유 시간이 찾아왔다.
+@roam corridor 12 6 down
+@goal 자유 시간: 성을 둘러본 뒤 대연회장(결투 클럽)으로
+@rnpc library hermione 5 6 right -> y2r_her
+@rnpc gryff ron 10 6 down -> y2r_ron
+@rnpc corridor draco 20 3 down -> y2r_draco
+@target hall 11 9 -> y2_duel
+@play
+# y2r_her
+@if sp_reparo -> y2r_her2
+헤르미온느: 해리, 안경 또 금 갔잖아. 레파로! …봐, 새것 같지? 이 주문도 배워 둬.
+헤르미온느: 부서진 건 웬만하면 고칠 수 있어. 호수 섬으로 가는 무너진 다리 같은 것도.
+@learn reparo
+@back
+# y2r_her2
+헤르미온느: 비밀의 방 얘기, 도서관에서 계속 찾아보고 있어. 너도 조심해.
+@back
+# y2r_ron
+@if sp_arania -> y2r_ron2
+론(sad): 해리… 해그리드가 그랬잖아. '거미를 따라가라'고. 난 진짜 거미가 싫어.
+론: 헤르미온느가 거미 쫓는 주문을 알려 줬어. 아라니아 엑숨아이. 너도 외워 둬. 제발.
+@learn arania
+@back
+# y2r_ron2
+론: 거미 얘기는 그만하자. 제발.
+@back
+# y2r_draco
+@if y2r_draco_done -> y2r_draco2
+드레이코(smirk): 포터. 그 낡은 님부스 2000으로 또 블러저랑 춤출 거니? 팔은 이제 뼈가 있고?
+> "덕분에. 다음 경기에선 블러저 말고 스니치를 잡을게." {draco+1, courage+1} -> y2r_dr_a
+> "걱정해 주는 거야?" {draco+2} -> y2r_dr_b
+# y2r_dr_a
+드레이코(angry): 흥, 스니치는 내 거야. 님부스 2001이 괜히 비싼 줄 알아?
+@set y2r_draco_done
+@back
+# y2r_dr_b
+드레이코(blush): 거, 걱정은 무슨! 뼈 없는 수색꾼이랑 붙으면 이겨도 기록이 안 남잖아!
+@set y2r_draco_done
+@back
+# y2r_draco2
+드레이코: 결투 클럽 간다며. …나도 갈 거야. 각오해, 포터.
+@back
+
+# y2_duel
+@fade
 @music tension
 @bg hall 11 7
+: 결투 클럽. 스네이프는 시범으로 록허트를 단번에 날려 버렸다.
+스네이프(smirk): 엑스펠리아르무스. 무장해제 주문이다. 너희 수준엔 이거면 충분하겠지.
+@learn expelliarmus
 : 결투 클럽. 스네이프가 짝을 정했다.
 스네이프(smirk): 포터와… 미스 말포이.
 드레이코(smirk): 겁나니, 포터?
@@ -605,8 +797,53 @@ const STORY = String.raw`
 @add hermione 1
 # y2_chamber
 @fade
+@music dark
+: 해그리드가 남긴 말, '거미를 따라가라'. 해리와 론은 줄지어 가는 거미들을 따라 금지된 숲 깊숙이 들어갔다.
+@if sp_arania -> y2_sp_go
+론(cry): 해, 해리. 거미 쫓는 주문… 아라니아 엑숨아이. 지금이라도 외워. 제발!
+@learn arania
+# y2_sp_go
+@explore forest 16 13 up
+@set _cur arania
+@enemy spider 10 6
+@enemy spider 14 4
+@enemy spider 6 4
+@enemy spider 18 5
+@npc ron 17 12 up -> y2_sp_ron
+@onclear -> y2_sp_end
+@goal 몰려드는 거미들을 물리쳐라! (아라니아 엑숨아이 · 인센디오)
+@play
+# y2_sp_ron
+론(cry): 거미야! 거미가 엄청 많아! 해리, 쏴! 아무거나 쏴!
+@back
+# y2_sp_end
+@bg forest 16 6
+: 마지막 거미가 날아가자, 숲속에서 거대한 그림자가 말했다. 50년 전 방을 연 건 해그리드가 아니라고. 괴물은 거미들이 이름조차 말하지 못하는 존재라고.
+: 해리와 론은 숲을 빠져나왔다. 론은 사흘 동안 거미 꿈을 꿨다.
+@fade
+@music tension
+: 그리고 지니가 비밀의 방으로 끌려갔다. 머틀의 화장실 세면대 아래로, 해리와 론은 끝없는 하수관을 미끄러져 내려갔다.
+@explore chamber 2 3 right
+@npc ron 1 2 down -> y2_ch_ron
+@enemy spider 21 3
+@enemy spider 23 6
+@obj 22 9 -> y2_ch_door
+@goal 길을 막은 거미줄과 바위를 치우고, 뱀 문양이 새겨진 문으로!
+@play
+# y2_ch_ron
+론: 천장이 무너져서 바위가 길을 막았어. 플리펜도나 윙가르디움으로 밀어 봐. 물에 빠뜨리면 디딤돌이 될지도! 거미줄은 불로 태우고.
+@back
+# y2_ch_door
+@if enemies>0 -> y2_ch_door_no
+해리: (쉿, 쉬이익— 열려라.)
+: 해리의 입에서 뱀의 언어가 흘러나오자, 돌로 된 뱀들이 스르르 비켜나며 문이 열렸다.
 @music title
-: 지니가 비밀의 방으로 끌려갔다. 해리는 머틀의 화장실 아래로 내려가, 그리핀도르의 검으로 바실리스크를 쓰러뜨리고 일기장을 꿰뚫었다.
+: 비밀의 방. 해리는 그리핀도르의 검으로 바실리스크를 쓰러뜨리고, 그 송곳니로 일기장을 꿰뚫었다. 지니는 무사했다.
+@goto y2_ch_after
+# y2_ch_door_no
+해리*: (거미들이 아직 주변에 있다. 먼저 정리하자.)
+@back
+# y2_ch_after
 @bg corridor 15 5
 : 다음 날, 교장실 앞. 해리는 양말을 끼운 일기장을 루시우스 말포이에게 건넸다. 루시우스가 양말을 내던졌고— 도비가 그것을 받았다.
 도비(cry): 주인님이 도비에게 옷을 주셨습니다! 도비는… 자유입니다!
@@ -698,6 +935,36 @@ const STORY = String.raw`
 
 # y3_hogs
 @fade
+@music slyth
+@bg classroom 10 4
+: 루핀 교수의 첫 수업. 교실 구석의 낡은 옷장이 덜컹덜컹 흔들렸다.
+루핀(smile): 보가트는 보는 사람이 가장 두려워하는 모습으로 변한단다. 주문은 리디큘러스. 웃음이 무기야.
+@learn riddikulus
+@explore classroom 9 8 up
+@set _cur riddikulus
+@enemy boggart 9 4
+@npc lupin 12 8 up -> y3_bg_lupin
+@npc draco 6 8 up -> y3_bg_draco
+@npc neville 4 6 right -> y3_bg_nev
+@onclear -> y3_bg_end
+@goal 보가트에게 리디큘러스! (다른 주문은 통하지 않는다)
+@play
+# y3_bg_lupin
+루핀: 우스운 모습을 떠올려, 해리. 그리고 외치는 거야. 리디큘러스!
+@back
+# y3_bg_nev
+네빌(smile): 난 스네이프 교수님한테 할머니 옷을 입혔어! 헤헤…
+@back
+# y3_bg_draco
+드레이코(smirk): 포터, 네 보가트는 뭘까. 혹시 거울? 네 머리 모양이 제일 무섭잖아.
+해리: 네 보가트는?
+드레이코(angry): …알 거 없잖아.
+@back
+# y3_bg_end
+@bg classroom 10 4
+: 보가트는 해리 앞에서 디멘터의 모습이 되었다가— 리디큘러스에 맞아 바람 빠진 풍선처럼 날아가 버렸다.
+루핀(smile): 디멘터로군. 그건… 네가 공포 그 자체를 두려워한다는 뜻이란다. 아주 현명한 거야.
+@fade
 @music school
 @bg grounds 20 5
 : 겨울. 호그스미드에 갈 수 없는 해리는 투명 망토를 쓰고 몰래 따라갔다. 비명을 지르는 오두막 근처에서 말포이 일행을 만났다.
@@ -732,6 +999,13 @@ const STORY = String.raw`
 # y3_slap_go
 : 말포이는 크레이브와 고일을 데리고 사라졌다.
 @fade
+@music sad
+@bg classroom 10 4
+: 겨울 내내, 해리는 루핀 교수에게 따로 수업을 받았다. 옷장 속 보가트가 디멘터로 변할 때마다, 해리의 귓가엔 어머니의 비명이 들렸다.
+루핀: 가장 행복한 기억을 떠올려, 해리. 그 기억에 모든 걸 걸고— 외치는 거야.
+@learn patronus
+: 지팡이 끝에서 은빛 안개가 피어올랐다. 아직은 희미했지만, 분명히 무언가의 모양이었다.
+@fade
 @music quidditch
 @bg pitch 13 5
 : 그리핀도르 대 레번클로. 해리가 스니치를 쫓던 순간, 검은 두건 셋이 경기장으로 들어왔다.
@@ -745,6 +1019,26 @@ const STORY = String.raw`
 드레이코(blush): ……예뻤어. 그 수사슴. 그냥 그렇다고.
 @add draco 1
 # y3_end
+@fade
+@music tension
+: 학년 말의 밤. 비명을 지르는 오두막에서 시리우스의 결백을 알게 된 직후— 호숫가로 수백 마리의 디멘터가 내려왔다.
+@explore grounds 20 10 up
+@tint rgba(10,20,60,0.55)
+@set _cur patronus
+@enemy dementor 18 6
+@enemy dementor 24 7
+@enemy dementor 22 12
+@enemy dementor 14 11
+@enemy dementor 27 9
+@onclear -> y3_lake_end
+@goal 디멘터를 몰아내라! (익스펙토 페트로눔 — 다른 주문은 통하지 않는다)
+@play
+# y3_lake_end
+@tint off
+@bg grounds 26 8
+@flash #e8f0ff
+: 은빛 수사슴이 호수 위를 달렸다. 디멘터들이 비명을 지르며 흩어졌다.
+해리*: (아버지였다고 생각했다. 하지만… 그건 나였어.)
 @fade
 @music romance
 @bg station 14 5
@@ -783,6 +1077,9 @@ const STORY = String.raw`
 @music school
 @bg hall 11 7
 : 트라이위저드 대회. 불의 잔은 네 번째 이름을 뱉어 냈다. 해리 포터.
+: 첫 번째 과제는 용이었다. 해리는 헤르미온느와 밤새 소환 마법을 연습했다.
+@learn accio
+: 아씨오, 파이어볼트! 저 멀리 성에서 날아온 빗자루를 타고, 해리는 헝가리 혼테일을 따돌렸다.
 : 다음 날부터 슬리데린 아이들 가슴에 배지가 번쩍였다. 『세드릭 디고리를 응원하라 — 포터는 구려』
 드레이코(smirk): 포터, 하나 줄까? 넌 특별히 공짜야. 냄새는 덤이고.
 > 무시하고 지나간다 {courage+1} -> y4_badge_ignore
@@ -810,6 +1107,41 @@ const STORY = String.raw`
 : 맥고나걸 교수가 달려와 말포이를 원래대로 돌려놓았다. 말포이는 얼굴이 새빨개진 채 해리를 노려보고 달아났다.
 
 # y4_ball
+@fade
+@music school
+: 크리스마스를 앞둔 자유 시간. 성은 무도회 이야기로 들떠 있다.
+@roam corridor 12 6 down
+@goal 자유 시간: 둘러본 뒤 그리핀도르 휴게실(파트너 고민)로
+@rnpc grounds cedric 16 8 left -> y4r_ced
+@rnpc library hermione 5 6 right -> y4r_her
+@rnpc corridor draco 20 3 down -> y4r_draco
+@target gryff 9 6 -> y4_ball_go
+@play
+# y4r_ced
+@if sp_diffindo -> y4r_ced2
+: 세드릭에게 첫 번째 과제가 용이라는 걸 알려 주고 싶었다. 친구들과 함께인 그를 따로 불러내려면…
+해리*: (가방을 찢으면 혼자 남겠지. 디핀도— 자르기 주문.)
+@learn diffindo
+: 세드릭의 가방이 찢어지며 책이 쏟아졌다. 친구들이 먼저 가고, 해리는 그에게 용에 대해 알려 주었다.
+세드릭: …고마워, 해리. 이 빚은 꼭 갚을게.
+@back
+# y4r_ced2
+세드릭(smile): 무도회 파트너는 정했어? 난 초랑 가기로 했어.
+@back
+# y4r_her
+@if sp_aguamenti -> y4r_her2
+헤르미온느: 다음 과제는 호수래. 그 다음은 뭐가 나올지 몰라. 물 주문도 익혀 둬. 아구아멘티! 불길을 끌 때 쓰는 거야.
+@learn aguamenti
+@back
+# y4r_her2
+헤르미온느(blush): 무도회? 난… 이미 파트너 있어. 누군지는 비밀이야.
+@back
+# y4r_draco
+드레이코(smirk): 포터, 무도회에 혼자 가게 생겼다며? 대표 선수가 짝도 없으면 호그와트 망신이야.
+드레이코(blush): …딱히 걱정하는 건 아니고. 그냥 그렇다고.
+@back
+
+# y4_ball_go
 @fade
 @music romance
 @bg corridor 15 5
@@ -874,9 +1206,37 @@ const STORY = String.raw`
 
 # y4_task3
 @fade
+@music school
+@bg library 9 5
+: 세 번째 과제를 앞두고, 헤르미온느는 해리를 도서관에 가두다시피 했다.
+헤르미온느: 미로엔 뭐가 나올지 몰라. 기절 주문이랑 분쇄 주문은 오늘 안에 익히는 거야!
+@if sp_stupefy -> y4_t3a
+@learn stupefy
+# y4_t3a
+@if sp_reducto -> y4_t3b
+헤르미온느: 리덕토. 단단한 걸 부수는 주문이야. 막힌 길을 뚫을 수 있어.
+@learn reducto
+# y4_t3b
+@if sp_aguamenti -> y4_t3c
+헤르미온느: 아구아멘티도! 불길이 나오면 이걸로 꺼.
+@learn aguamenti
+# y4_t3c
+@fade
+@music tension
+: 세 번째 과제. 거대한 산울타리 미로. 안개 너머 어딘가에 우승컵이 있다.
+@explore maze 12 15 up
+@enemy skrewt 3 9
+@enemy skrewt 21 5
+@enemy skrewt 12 13
+@enemy boggart 19 8
+@enemy spider 5 6
+@obj 12 8 -> y4_cup
+@goal 미로 한가운데의 우승컵으로! (불길엔 아구아멘티, 금 간 울타리엔 리덕토, 덩굴엔 디핀도)
+@play
+# y4_cup
 @music dark
 @bg black
-: 세 번째 과제. 해리와 세드릭은 함께 우승컵을 잡았고— 우승컵은 포트키였다.
+: 미로 한가운데. 해리와 세드릭은 함께 우승컵을 잡았고— 우승컵은 포트키였다.
 : 묘지. 초록빛 섬광. 세드릭이 쓰러졌다. 그리고 볼드모트가 돌아왔다.
 : 그 자리에 모인 죽음을 먹는 자들 중에는, 가면 아래로 긴 백금발을 늘어뜨린 남자도 있었다.
 @fade
@@ -934,14 +1294,26 @@ const STORY = String.raw`
 # y5_cho_end
 @fade
 @music romance
+@bg ror 11 6
+: 필요의 방. 해리는 DA 친구들에게 주문을 가르치며, 스스로도 새로운 주문을 익혔다.
+@learn protego
+@learn petrificus
 @explore ror 11 10 up
-@goal 필요의 방. DA 친구들을 둘러본 뒤 위쪽 빈 공간을 확인하자
+@enemy dummy 4 4
+@enemy dummy 17 8
+@enemy dummy 20 10
+@goal 필요의 방. 연습용 표적을 쓰러뜨리고, 친구들을 둘러본 뒤 위쪽 빈 공간을 확인하자
 @npc hermione 6 8 right -> y5_ror_her
 @npc ron 15 7 left -> y5_ror_ron
 @npc neville 10 6 down -> y5_ror_nev
 @obj 11 4 -> y5_ror_door
 @play
 # y5_ror_her
+@if sp_revelio -> y5_ror_her2
+헤르미온느(smile): 해리, 이것 좀 봐. 레벨리오. 숨겨진 걸 드러내는 주문이야. 엄브리지가 숨겨 둔 감시 마법을 찾을 때 좋아.
+@learn revelio
+@back
+# y5_ror_her2
 헤르미온느(smile): 다들 많이 늘었어. 네빌 봐, 무장해제가 완벽해!
 @back
 # y5_ror_ron
@@ -957,11 +1329,15 @@ const STORY = String.raw`
 네빌(smile): 다음엔 패트로누스도 가르쳐 줘!
 @back
 # y5_ror_door
+@if enemies>0 -> y5_ror_practice
 @if draco>=16 -> y5_warn
 : 어느 날, 엄브리지와 조사단이 필요의 방에 들이닥쳤다. 맨 앞에서 해리의 팔을 붙잡은 건 말포이였다.
 드레이코(smirk): 잡았다, 포터. 교수님! 여기요!
 해리*: (……역시, 말포이는 말포이구나.)
 @goto y5_ministry
+# y5_ror_practice
+해리*: (먼저 표적 연습부터 끝내자. 가르치는 사람이 못하면 안 되지.)
+@back
 # y5_warn
 : 방을 나서던 해리의 손목을 누군가 붙잡아 벽 틈으로 끌어당겼다. 말포이였다.
 드레이코(angry): 쉿! …오늘 밤 엄브리지가 여기 들이닥쳐. 너희 중 누가 불었어.
@@ -977,7 +1353,18 @@ const STORY = String.raw`
 @music tension
 @bg ministry 11 5
 : 6월. 신비부. 예언을 노리는 죽음을 먹는 자들이 해리와 친구들을 둘러쌌다. 그 선두에는 루시우스 말포이가 있었다.
-@mini duel deatheater
+@explore ministry 11 8 up
+@npc hermione 10 8 up
+@npc neville 12 8 up
+@enemy deatheater 5 2
+@enemy deatheater 16 4
+@enemy deatheater 8 6
+@enemy deatheater 19 2
+@onclear -> y5_min_end
+@goal 죽음을 먹는 자들을 쓰러뜨려라! (프로테고로 주문을 튕겨 내자)
+@play
+# y5_min_end
+@bg ministry 11 5
 : 불사조 기사단이 도착했다. 그리고 그 혼란 속에서— 시리우스가 베일 너머로 사라졌다.
 : 루시우스 말포이는 체포되어 아즈카반으로 보내졌다.
 @fade
@@ -1031,6 +1418,36 @@ const STORY = String.raw`
 @add draco 1
 # y6_nose_go
 : 해리는 루나 러브굿이 찾아낼 때까지 그대로 누워 있어야 했다.
+@fade
+@music slyth
+: 6학년의 자유 시간. 해리는 마법 지도를 들고 말포이의 흔적을 쫓았다.
+@roam corridor 12 6 down
+@goal 자유 시간: 둘러본 뒤 3층 여자 화장실(복도 오른쪽 위 문)로
+@robj gryff 2 8 -> y6r_book
+@rnpc corridor draco 20 3 down -> y6r_draco
+@rnpc library hermione 5 6 right -> y6r_her
+@target bathroom 7 6 -> y6_bath_go
+@play
+# y6r_book
+@if sp_levicorpus -> y6r_book2
+: 낡은 마법약 교과서. 여백마다 '혼혈왕자'라는 사람의 손글씨가 빼곡하다.
+: 『레비코르푸스(무언으로)』— 발목을 잡아 거꾸로 매다는 주문이라고 적혀 있다.
+@learn levicorpus
+: 그 아래, 굵게 그어진 다른 주문 하나. 『섹툼셈프라 — 적에게』
+해리*: (……이건 뭔지 모르니까 쓰지 말자.)
+@back
+# y6r_book2
+: 혼혈왕자의 책. 여백의 글씨가 묘하게 날카롭다.
+@back
+# y6r_draco
+드레이코(angry): …따라다니지 마, 포터. 지도든 뭐든, 날 쫓아다니는 거 다 알아.
+드레이코(sad): 이번엔 정말로… 상관하지 마.
+@back
+# y6r_her
+헤르미온느(angry): 해리, 그 책 위험해. 출처도 모르는 주문을 쓰면 안 돼.
+@back
+
+# y6_bath_go
 @fade
 @music slyth
 @bg corridor 15 5
@@ -1140,19 +1557,46 @@ const STORY = String.raw`
 # y7_wand_sorry
 드레이코(surprise): ……!
 : 말포이의 입술이 소리 없이 움직였다. 가. 빨리.
-@goto y7_battle
+@goto y7_escape
 # y7_wand_hand
 드레이코(cry): ……바보. 엄마를 두고 갈 수 없어.
 : 일곱 해 전 열차 안과는 반대로— 이번엔 말포이가 해리의 손을 밀어냈다. 아주 슬픈 얼굴로.
 @set reverse_hand
-@goto y7_battle
+@goto y7_escape
 # y7_wand_silent
 : 말포이는 빈손을 내려다본 채 서 있었다.
+# y7_escape
+@explore manor 11 9 up
+@tint rgba(10,0,20,0.4)
+@npc ron 10 10 up
+@enemy bellatrix 12 3
+@enemy deatheater 5 4
+@enemy deatheater 18 8
+@onclear -> y7_escape_end
+@goal 벨라트릭스와 죽음을 먹는 자들을 막고 탈출하라! (프로테고 · 스투페파이 · 엑스펠리아르무스)
+@play
+# y7_escape_end
+: 펑— 도비가 해리와 친구들의 손을 잡았다. 저택이 빙글 돌며 사라졌다.
 
 # y7_battle
 @tint off
 @fade
 @music tension
+: 호그와트 전투. 교정은 이미 불길과 주문의 빛으로 가득했다.
+@explore grounds 10 3 down
+@tint rgba(90,20,10,0.35)
+@npc ron 11 2 down
+@enemy deatheater 14 6
+@enemy deatheater 20 8
+@enemy deatheater 8 9
+@enemy spider 16 11
+@enemy spider 22 12
+@onclear -> y7_battle2
+@goal 성을 지켜라! 죽음을 먹는 자들과 거미 떼를 물리치자
+@play
+# y7_battle2
+@tint off
+@fade
 @bg ror 11 6
 : 호그와트 전투. 필요의 방. 레번클로의 보관을 찾던 해리 앞에 말포이와 크레이브, 고일이 나타났다.
 드레이코(angry): 포터…. 내 지팡이 돌려줘.
