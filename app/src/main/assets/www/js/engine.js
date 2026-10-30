@@ -536,7 +536,7 @@ function drawStats() {
     const por = getPortrait(k === 'courage' ? 'harry' : k, k === 'draco' ? 'smirk' : 'normal');
     if (por) { ctx.imageSmoothingEnabled = isIllust(por); ctx.drawImage(por, 52, y - 4, 20, 20); ctx.imageSmoothingEnabled = false; }
     txt(nm, 80, y, '#e8e8f0');
-    const max = k === 'draco' ? 50 : 15;
+    const max = k === 'draco' ? 70 : 20;
     ctx.fillStyle = '#222'; ctx.fillRect(200, y + 3, 120, 8);
     ctx.fillStyle = col; ctx.fillRect(200, y + 3, clamp(v / max, 0, 1) * 120, 8);
     txt(String(v), 328, y, col);
